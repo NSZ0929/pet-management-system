@@ -34,17 +34,17 @@ public class PetController {
 
     /**
      * 添加新宠物
+     * 支持 URL 参数 ownerId
+     * POST /pets?ownerId=4
      */
     @PostMapping
-    public Pet addPet(@RequestBody @NonNull Pet pet) {
+    public Pet addPet(@RequestParam Long ownerId,
+                      @RequestBody @NonNull Pet pet) {
 
-        Long ownerId = pet.getOwner() != null ? pet.getOwner().getId() : null;
-        if (ownerId == null) {
-            throw new RuntimeException("Owner ID cannot be null");
-        }
-
-        // 获取并验证 Owner 存在
+        // 获取并验证 Owner 是否存在
         Owner owner = ownerService.getOwnerById(ownerId);
+
+        // 绑定 Owner
         pet.setOwner(owner);
 
         return petService.addPet(pet, ownerId);
