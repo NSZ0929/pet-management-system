@@ -6,6 +6,7 @@ import PetProfileView from './views/PetProfileView.vue'
 import DailyLogView from './views/DailyLogView.vue'
 import AppointmentView from './views/AppointmentView.vue'
 import LoginView from './views/LoginView.vue'
+import SettingsView from './views/SettingsView.vue'
 import {
   Home,
   User,
@@ -191,13 +192,7 @@ const navigation = [
               v-else-if="currentView === 'appointment'"
               :header-title="headerTitle"
             />
-            <div
-              v-else
-              class="text-center p-12 bg-white rounded-3xl shadow-lg border border-slate-100 min-h-[50vh]"
-            >
-              <h2 class="text-2xl font-bold text-slate-600">设置界面 (Settings View)</h2>
-              <p class="text-slate-400 mt-2">这里将是用户设置界面，应用运行正常。</p>
-            </div>
+            <SettingsView v-else-if="currentView === 'settings'" />
           </div>
         </transition>
       </main>
