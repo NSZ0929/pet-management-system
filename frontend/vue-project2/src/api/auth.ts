@@ -24,18 +24,32 @@ export interface LoginResponse {
   user: AuthUser
 }
 
-export const login = (data: LoginPayload) => http.post<LoginResponse>('/auth/login', data)
+// 登录
+export const login = (data: LoginPayload) =>
+  http.post<LoginResponse>('/auth/login', data)
 
-export const register = (data: RegisterPayload) => http.post('/auth/register', data)
+// 注册
+export const register = (data: RegisterPayload) =>
+  http.post('/auth/register', data)
 
-export const checkToken = () => http.get('/auth/check-token')
+// 检查 token
+export const checkToken = () =>
+  http.get('/auth/check-token')
 
-// 修改密码 PUT /auth/change-password
-// Body: { oldPassword, newPassword }
+// ================= 修改密码 =================
+// ⚠️ 参数名必须和后端一致：oldPassword / newPassword
 export const changePassword = (oldPassword: string, newPassword: string) =>
-  http.put('/auth/change-password', { oldPassword, newPassword })
+  http.put('/auth/change-password', {
+    oldPassword,
+    newPassword,
+  })
 
-// 修改用户名 PUT /auth/update-username
-// Body: { newUsername }
+// ================= 修改用户名 =================
+// ⚠️ 参数名必须叫 newUsername
 export const updateUsername = (newUsername: string) =>
-  http.put<{ message: string; username: string }>('/auth/update-username', { newUsername })
+  http.put<{ message: string; username: string }>(
+    '/auth/update-username',
+    {
+      newUsername,
+    }
+  )
