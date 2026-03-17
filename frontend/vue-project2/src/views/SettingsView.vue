@@ -1,72 +1,70 @@
 <script setup lang="ts">
+import { ref, reactive, computed } from 'vue'
 import {
-  AlertCircle,
+  User,
+  Lock,
   Bell,
+  Globe,
+  Moon,
+  Sun,
+  Info,
   Check,
-  CheckCircle2,
-  ChevronRight,
   Eye,
   EyeOff,
-  Globe,
-  Heart,
-  Info,
-  Lock,
-  Mail,
-  Moon,
-  PawPrint,
+  ChevronRight,
   Shield,
   Smartphone,
-  Sun,
-  User,
-} from 'lucide-vue-next';
-import { computed, reactive, ref } from 'vue';
+  Mail,
+  Heart,
+  AlertCircle,
+  CheckCircle2,
+} from 'lucide-vue-next'
+import { changePassword, updateUsername } from '../api/auth'
 
 defineProps<{ headerTitle?: string }>()
 
-// ── 当前激活的设置分区 ────────────────────────────────────
 const activeSection = ref<'profile' | 'security' | 'notifications' | 'preferences' | 'about'>(
   'profile',
 )
 
-// ── 用户信息（从 localStorage 读取） ─────────────────────
+// ── 用户信息 ──────────────────────────────────────────────
 const storedUser = JSON.parse(localStorage.getItem('user') || '{}')
 const username = ref(storedUser.username || '未知用户')
 const userRole = ref(storedUser.role || 'USER')
 
-// ── 个人信息表单 ──────────────────────────────────────────
-const profileForm = reactive({
-  username: username.value,
-})
+// ── 个人信息 ──────────────────────────────────────────────
+const profileForm = reactive({ username: username.value })
 const profileSaving = ref(false)
 const profileSuccess = ref(false)
 const profileError = ref('')
 
 const saveProfile = async () => {
+  if (!profileForm.username.trim()) {
+    profileError.value = '用户名不能为空'
+    return
+  }
   profileSaving.value = true
   profileError.value = ''
   profileSuccess.value = false
   try {
-    // 暂时只更新本地显示（后端暂无修改用户名接口）
-    await new Promise((r) => setTimeout(r, 600))
-    username.value = profileForm.username
+    const res = await updateUsername(profileForm.username.trim())
+    // 更新本地存储
+    username.value = res.data.username
     const user = JSON.parse(localStorage.getItem('user') || '{}')
-    user.username = profileForm.username
+    user.username = res.data.username
     localStorage.setItem('user', JSON.stringify(user))
     profileSuccess.value = true
     setTimeout(() => (profileSuccess.value = false), 3000)
-  } catch {
-    profileError.value = '保存失败，请稍后重试'
+  } catch (err) {
+    profileError.value =
+      (err as { response?: { data?: string } })?.response?.data || '保存失败，请稍后重试'
   } finally {
     profileSaving.value = false
   }
 }
 
-// ── 密码修改表单 ──────────────────────────────────────────
-const passwordForm = reactive({
-  current: '',
-  newPwd: '',
-  confirm: '',
-})
+// ── 密码修改 ──────────────────────────────────────────────
+const passwordForm = reactive({ current: '', newPwd: '', confirm: '' })
 const showPasswords = reactive({ current: false, new: false, confirm: false })
 const passwordSaving = ref(false)
 const passwordSuccess = ref(false)
@@ -82,16 +80,10 @@ const passwordStrength = computed(() => {
   if (/[^A-Za-z0-9]/.test(p)) score++
   return score
 })
-
-const strengthLabel = computed(() => {
-  const labels = ['', '弱', '一般', '较强', '强']
-  return labels[passwordStrength.value]
-})
-
-const strengthColor = computed(() => {
-  const colors = ['', 'bg-red-400', 'bg-amber-400', 'bg-teal-400', 'bg-green-500']
-  return colors[passwordStrength.value]
-})
+const strengthLabel = computed(() => ['', '弱', '一般', '较强', '强'][passwordStrength.value])
+const strengthColor = computed(
+  () => ['', 'bg-red-400', 'bg-amber-400', 'bg-teal-400', 'bg-green-500'][passwordStrength.value],
+)
 
 const savePassword = async () => {
   passwordError.value = ''
@@ -109,15 +101,15 @@ const savePassword = async () => {
   }
   passwordSaving.value = true
   try {
-    // 后端暂无修改密码接口，模拟成功
-    await new Promise((r) => setTimeout(r, 800))
+    await changePassword(passwordForm.current, passwordForm.newPwd)
     passwordSuccess.value = true
     passwordForm.current = ''
     passwordForm.newPwd = ''
     passwordForm.confirm = ''
     setTimeout(() => (passwordSuccess.value = false), 3000)
-  } catch {
-    passwordError.value = '密码修改失败，请稍后重试'
+  } catch (err) {
+    passwordError.value =
+      (err as { response?: { data?: string } })?.response?.data || '保存失败，请稍后重试'
   } finally {
     passwordSaving.value = false
   }
@@ -150,7 +142,6 @@ const appInfo = {
   database: 'MySQL 8.4',
 }
 
-// ── 导航菜单 ──────────────────────────────────────────────
 const sections = [
   { key: 'profile', label: '个人信息', icon: User, color: 'text-teal-500', bg: 'bg-teal-50' },
   { key: 'security', label: '账号安全', icon: Lock, color: 'text-amber-500', bg: 'bg-amber-50' },
@@ -170,7 +161,6 @@ const sections = [
   <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
     <!-- 左侧导航 -->
     <div class="lg:col-span-1 space-y-3">
-      <!-- 用户头像卡片 -->
       <div class="bg-white rounded-3xl p-5 shadow-lg border border-slate-100 text-center">
         <div
           class="w-16 h-16 rounded-2xl bg-gradient-to-br from-teal-400 to-cyan-500 flex items-center justify-center mx-auto mb-3 shadow-lg shadow-teal-100"
@@ -180,12 +170,10 @@ const sections = [
         <p class="font-bold text-slate-800">{{ username }}</p>
         <span
           class="inline-block mt-1 text-xs font-bold px-2 py-0.5 bg-teal-50 text-teal-600 rounded-full"
+          >{{ userRole }}</span
         >
-          {{ userRole }}
-        </span>
       </div>
 
-      <!-- 导航菜单 -->
       <div class="bg-white rounded-3xl p-3 shadow-lg border border-slate-100">
         <button
           v-for="section in sections"
@@ -216,7 +204,7 @@ const sections = [
       </div>
     </div>
 
-    <!-- 右侧内容区 -->
+    <!-- 右侧内容 -->
     <div class="lg:col-span-3">
       <!-- 个人信息 -->
       <div
@@ -229,42 +217,38 @@ const sections = [
           </div>
           <div>
             <h2 class="font-bold text-lg text-slate-800">个人信息</h2>
-            <p class="text-xs text-slate-400">管理你的账户基本信息</p>
+            <p class="text-xs text-slate-400">修改用户名，实时同步到后端</p>
           </div>
         </div>
 
-        <!-- 用户名 -->
         <div class="space-y-2">
           <label class="text-sm font-bold text-slate-600">用户名 Username</label>
           <input
             v-model="profileForm.username"
             type="text"
             class="w-full px-4 py-3 rounded-2xl border-2 border-slate-100 bg-slate-50 text-slate-800 font-medium focus:outline-none focus:border-teal-400 transition-all"
-            placeholder="输入用户名"
+            placeholder="输入新用户名"
           />
-          <p class="text-xs text-slate-400">用户名将显示在界面左下角</p>
+          <p class="text-xs text-slate-400">修改后需要重新登录才能完全生效</p>
         </div>
 
-        <!-- 角色（只读） -->
         <div class="space-y-2">
           <label class="text-sm font-bold text-slate-600">账户角色 Role</label>
           <div
             class="w-full px-4 py-3 rounded-2xl border-2 border-slate-100 bg-slate-50 text-slate-400 font-medium flex items-center gap-2"
           >
-            <Shield :size="15" class="text-slate-300" />
-            {{ userRole }}
+            <Shield :size="15" class="text-slate-300" />{{ userRole }}
             <span class="ml-auto text-xs bg-slate-200 text-slate-500 px-2 py-0.5 rounded-full"
               >只读</span
             >
           </div>
         </div>
 
-        <!-- 成功/错误提示 -->
         <div
           v-if="profileSuccess"
           class="flex items-center gap-2 text-green-600 bg-green-50 px-4 py-3 rounded-xl text-sm font-medium"
         >
-          <CheckCircle2 :size="16" /> 保存成功！
+          <CheckCircle2 :size="16" /> 用户名修改成功！
         </div>
         <div
           v-if="profileError"
@@ -298,13 +282,12 @@ const sections = [
           </div>
           <div>
             <h2 class="font-bold text-lg text-slate-800">账号安全</h2>
-            <p class="text-xs text-slate-400">修改密码，保护账号安全</p>
+            <p class="text-xs text-slate-400">修改密码，直接对接后端验证</p>
           </div>
         </div>
 
-        <!-- 当前密码 -->
         <div class="space-y-2">
-          <label class="text-sm font-bold text-slate-600">当前密码 Current Password</label>
+          <label class="text-sm font-bold text-slate-600">当前密码</label>
           <div class="relative">
             <input
               v-model="passwordForm.current"
@@ -316,15 +299,13 @@ const sections = [
               @click="showPasswords.current = !showPasswords.current"
               class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
             >
-              <Eye v-if="!showPasswords.current" :size="18" />
-              <EyeOff v-else :size="18" />
+              <Eye v-if="!showPasswords.current" :size="18" /><EyeOff v-else :size="18" />
             </button>
           </div>
         </div>
 
-        <!-- 新密码 -->
         <div class="space-y-2">
-          <label class="text-sm font-bold text-slate-600">新密码 New Password</label>
+          <label class="text-sm font-bold text-slate-600">新密码</label>
           <div class="relative">
             <input
               v-model="passwordForm.newPwd"
@@ -336,11 +317,9 @@ const sections = [
               @click="showPasswords.new = !showPasswords.new"
               class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
             >
-              <Eye v-if="!showPasswords.new" :size="18" />
-              <EyeOff v-else :size="18" />
+              <Eye v-if="!showPasswords.new" :size="18" /><EyeOff v-else :size="18" />
             </button>
           </div>
-          <!-- 密码强度 -->
           <div v-if="passwordForm.newPwd" class="space-y-1">
             <div class="flex gap-1">
               <div
@@ -358,9 +337,8 @@ const sections = [
           </div>
         </div>
 
-        <!-- 确认新密码 -->
         <div class="space-y-2">
-          <label class="text-sm font-bold text-slate-600">确认新密码 Confirm Password</label>
+          <label class="text-sm font-bold text-slate-600">确认新密码</label>
           <div class="relative">
             <input
               v-model="passwordForm.confirm"
@@ -377,8 +355,7 @@ const sections = [
               @click="showPasswords.confirm = !showPasswords.confirm"
               class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
             >
-              <Eye v-if="!showPasswords.confirm" :size="18" />
-              <EyeOff v-else :size="18" />
+              <Eye v-if="!showPasswords.confirm" :size="18" /><EyeOff v-else :size="18" />
             </button>
           </div>
           <p
@@ -430,10 +407,8 @@ const sections = [
             <p class="text-xs text-slate-400">管理你希望接收的提醒类型</p>
           </div>
         </div>
-
         <div class="space-y-2">
           <p class="text-xs font-bold text-slate-400 uppercase tracking-wider">宠物提醒</p>
-
           <div
             v-for="item in [
               {
@@ -477,7 +452,6 @@ const sections = [
             </button>
           </div>
         </div>
-
         <div class="space-y-2">
           <p class="text-xs font-bold text-slate-400 uppercase tracking-wider">通知方式</p>
           <div
@@ -529,8 +503,6 @@ const sections = [
             <p class="text-xs text-slate-400">自定义你的使用体验</p>
           </div>
         </div>
-
-        <!-- 主题 -->
         <div class="space-y-3">
           <label class="text-sm font-bold text-slate-600">主题 Theme</label>
           <div class="grid grid-cols-2 gap-3">
@@ -583,8 +555,6 @@ const sections = [
             🚧 深色模式将在后续版本中实装
           </p>
         </div>
-
-        <!-- 语言 -->
         <div class="space-y-2">
           <label class="text-sm font-bold text-slate-600">语言 Language</label>
           <div class="grid grid-cols-2 gap-3">
@@ -594,11 +564,14 @@ const sections = [
                 'flex items-center gap-2 p-3 rounded-xl border-2 transition-all text-sm font-bold',
                 preferences.language === 'zh-CN'
                   ? 'border-teal-400 bg-teal-50 text-teal-700'
-                  : 'border-slate-100 bg-slate-50 text-slate-600 hover:border-slate-200',
+                  : 'border-slate-100 bg-slate-50 text-slate-600',
               ]"
             >
-              <span class="text-lg">🇨🇳</span> 中文
-              <Check v-if="preferences.language === 'zh-CN'" :size="14" class="ml-auto" />
+              <span class="text-lg">🇨🇳</span> 中文<Check
+                v-if="preferences.language === 'zh-CN'"
+                :size="14"
+                class="ml-auto"
+              />
             </button>
             <button
               @click="preferences.language = 'en'"
@@ -606,19 +579,20 @@ const sections = [
                 'flex items-center gap-2 p-3 rounded-xl border-2 transition-all text-sm font-bold',
                 preferences.language === 'en'
                   ? 'border-teal-400 bg-teal-50 text-teal-700'
-                  : 'border-slate-100 bg-slate-50 text-slate-600 hover:border-slate-200',
+                  : 'border-slate-100 bg-slate-50 text-slate-600',
               ]"
             >
-              <span class="text-lg">🇬🇧</span> English
-              <Check v-if="preferences.language === 'en'" :size="14" class="ml-auto" />
+              <span class="text-lg">🇬🇧</span> English<Check
+                v-if="preferences.language === 'en'"
+                :size="14"
+                class="ml-auto"
+              />
             </button>
           </div>
         </div>
-
-        <!-- 紧凑模式 -->
         <div class="flex items-center justify-between p-4 bg-slate-50 rounded-2xl">
           <div>
-            <p class="text-sm font-bold text-slate-700">紧凑模式 Compact Mode</p>
+            <p class="text-sm font-bold text-slate-700">紧凑模式</p>
             <p class="text-xs text-slate-400">减少间距，显示更多内容</p>
           </div>
           <button
@@ -640,25 +614,22 @@ const sections = [
 
       <!-- 关于应用 -->
       <div v-else-if="activeSection === 'about'" class="space-y-4">
-        <!-- 应用信息 -->
         <div class="bg-white rounded-3xl p-7 shadow-lg border border-slate-100">
           <div class="flex items-center gap-4 mb-6">
             <div
               class="w-14 h-14 rounded-2xl bg-gradient-to-br from-teal-400 to-cyan-500 flex items-center justify-center shadow-lg shadow-teal-100"
             >
-              <PawPrint :size="28" class="text-white" />
+              <span class="text-2xl">🐾</span>
             </div>
             <div>
               <h2 class="font-bold text-xl text-slate-800">{{ appInfo.name }}</h2>
               <p class="text-slate-400 text-sm">{{ appInfo.description }}</p>
               <span
                 class="inline-block mt-1 text-xs font-bold px-2 py-0.5 bg-teal-50 text-teal-600 rounded-full"
+                >v{{ appInfo.version }}</span
               >
-                v{{ appInfo.version }}
-              </span>
             </div>
           </div>
-
           <div class="space-y-3">
             <div
               v-for="item in [
@@ -675,8 +646,6 @@ const sections = [
             </div>
           </div>
         </div>
-
-        <!-- 团队信息 -->
         <div class="bg-white rounded-3xl p-6 shadow-lg border border-slate-100">
           <h3 class="font-bold text-slate-800 mb-4 flex items-center gap-2">
             <Heart :size="16" class="text-red-400" /> 开发团队

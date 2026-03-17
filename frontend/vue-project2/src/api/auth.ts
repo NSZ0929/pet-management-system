@@ -10,30 +10,32 @@ export interface RegisterPayload {
   password: string
 }
 
-export interface AuthResponse {
+export interface AuthUser {
+  id: number
+  username: string
+  role: string
+}
+
+export interface LoginResponse {
   message: string
   token: string
   tokenType: string
   expiresIn: number
-  user: {
-    id: number
-    username: string
-    role: string
-  }
+  user: AuthUser
 }
 
-export interface RegisterResponse {
-  message: string
-  userId: number
-  username: string
-}
+export const login = (data: LoginPayload) => http.post<LoginResponse>('/auth/login', data)
 
-// 登录
-export const login = (payload: LoginPayload) => http.post<AuthResponse>('/auth/login', payload)
+export const register = (data: RegisterPayload) => http.post('/auth/register', data)
 
-// 注册
-export const register = (payload: RegisterPayload) =>
-  http.post<RegisterResponse>('/auth/register', payload)
-
-// 验证 Token
 export const checkToken = () => http.get('/auth/check-token')
+
+// 修改密码 PUT /auth/change-password
+// Body: { oldPassword, newPassword }
+export const changePassword = (oldPassword: string, newPassword: string) =>
+  http.put('/auth/change-password', { oldPassword, newPassword })
+
+// 修改用户名 PUT /auth/update-username
+// Body: { newUsername }
+export const updateUsername = (newUsername: string) =>
+  http.put<{ message: string; username: string }>('/auth/update-username', { newUsername })
