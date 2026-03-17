@@ -26,20 +26,28 @@ public class UserService {
         if (user == null) {
             throw new RuntimeException("User cannot be null");
         }
-        
+
+        if (user.getUsername() == null || user.getUsername().trim().isEmpty()) {
+            throw new RuntimeException("用户名不能为空");
+        }
+
+        if (user.getPassword() == null || user.getPassword().trim().isEmpty()) {
+            throw new RuntimeException("密码不能为空");
+        }
+
         // 检查用户名是否已存在
         if (userRepository.findByUsername(user.getUsername()).isPresent()) {
-            throw new RuntimeException("Username already exists: " + user.getUsername());
+            throw new RuntimeException("用户名已存在: " + user.getUsername());
         }
-        
+
         // 加密密码
         user.setPassword(passwordEncoder.encode(user.getPassword()));
-        
-        // 设置默认角色
+
+        // 默认角色
         if (user.getRole() == null || user.getRole().isEmpty()) {
             user.setRole("USER");
         }
-        
+
         return userRepository.save(user);
     }
 
@@ -48,14 +56,7 @@ public class UserService {
      */
     public User findByUsername(String username) {
         return userRepository.findByUsername(username)
-                .orElseThrow(() -> new RuntimeException("User not found: " + username));
-    }
-
-    /**
-     * 验证密码
-     */
-    public boolean checkPassword(String rawPassword, String encodedPassword) {
-        return passwordEncoder.matches(rawPassword, encodedPassword);
+                .orElseThrow(() -> new RuntimeException("用户不存在: " + username));
     }
 
     /**
@@ -63,9 +64,47 @@ public class UserService {
      */
     public User authenticate(String username, String password) {
         User user = findByUsername(username);
-        if (passwordEncoder.matches(password, user.getPassword())) {
-            return user;
+
+        if (!passwordEncoder.matches(password, user.getPassword())) {
+            throw new RuntimeException("密码错误");
         }
-        throw new RuntimeException("Invalid password");
+
+        return user;
+    }
+
+    /**
+     * 修改密码
+     */
+    public void changePassword(String username, String oldPassword, String newPassword) {
+        User user = findByUsername(username);
+
+        if (!passwordEncoder.matches(oldPassword, user.getPassword())) {
+            throw new RuntimeException("旧密码错误");
+        }
+
+        if (newPassword == null || newPassword.trim().isEmpty()) {
+            throw new RuntimeException("新密码不能为空");
+        }
+
+        user.setPassword(passwordEncoder.encode(newPassword));
+        userRepository.save(user);
+    }
+
+    /**
+     * 修改用户名
+     */
+    public User updateUsername(String oldUsername, String newUsername) {
+        User user = findByUsername(oldUsername);
+
+        if (newUsername == null || newUsername.trim().isEmpty()) {
+            throw new RuntimeException("新用户名不能为空");
+        }
+
+        if (userRepository.findByUsername(newUsername).isPresent()) {
+            throw new RuntimeException("用户名已存在: " + newUsername);
+        }
+
+        user.setUsername(newUsername);
+        return userRepository.save(user);
     }
 }
