@@ -134,4 +134,75 @@ public class AuthController {
                     .body("Token验证失败: " + e.getMessage());
         }
     }
+    // ================= 修改密码 =================
+@PutMapping("/change-password")
+@Operation(summary = "修改密码")
+public ResponseEntity<?> changePassword(
+        @RequestHeader("Authorization") String authHeader,
+        @RequestBody Map<String, String> request
+) {
+    try {
+        // 校验Token
+        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body("Token格式错误");
+        }
+
+        String token = authHeader.substring(7);
+        String username = jwtUtil.extractUsername(token);
+
+        String oldPassword = request.get("oldPassword");
+        String newPassword = request.get("newPassword");
+
+        if (oldPassword == null || newPassword == null) {
+            return ResponseEntity.badRequest().body("参数不能为空");
+        }
+
+        userService.changePassword(username, oldPassword, newPassword);
+
+        return ResponseEntity.ok("密码修改成功");
+
+    } catch (Exception e) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body("修改失败: " + e.getMessage());
+    }
+}
+
+
+// ================= 修改用户名 =================
+@PutMapping("/update-username")
+@Operation(summary = "修改用户名")
+public ResponseEntity<?> updateUsername(
+        @RequestHeader("Authorization") String authHeader,
+        @RequestBody Map<String, String> request
+) {
+    try {
+        // 校验Token
+        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body("Token格式错误");
+        }
+
+        String token = authHeader.substring(7);
+        String oldUsername = jwtUtil.extractUsername(token);
+
+        String newUsername = request.get("newUsername");
+
+        if (newUsername == null || newUsername.trim().isEmpty()) {
+            return ResponseEntity.badRequest().body("新用户名不能为空");
+        }
+
+        User updatedUser = userService.updateUsername(oldUsername, newUsername);
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("message", "用户名修改成功");
+        response.put("username", updatedUser.getUsername());
+
+        return ResponseEntity.ok(response);
+
+    } catch (Exception e) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body("修改失败: " + e.getMessage());
+    }
+}
 }
