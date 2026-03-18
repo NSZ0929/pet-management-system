@@ -54,7 +54,12 @@ const saveProfile = async () => {
     user.username = res.data.username
     localStorage.setItem('user', JSON.stringify(user))
     profileSuccess.value = true
-    setTimeout(() => (profileSuccess.value = false), 3000)
+    // 用户名修改后需要重新登录获取新Token
+    setTimeout(() => {
+      localStorage.removeItem('token')
+      localStorage.removeItem('user')
+      window.location.reload()
+    }, 2000)
   } catch (err) {
     profileError.value =
       (err as { response?: { data?: string } })?.response?.data || '保存失败，请稍后重试'

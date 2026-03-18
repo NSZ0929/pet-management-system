@@ -18,6 +18,7 @@ public class WebConfig implements WebMvcConfigurer {
                     "http://localhost:8080",  // 后端自身（用于测试）
                     "http://localhost:8081",  // 其他端口
                     "http://127.0.0.1:5173",
+                    "http://127.0.0.1:3000",
                     "http://127.0.0.1:3000"
                 )
                 // 允许的HTTP方法
