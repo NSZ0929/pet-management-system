@@ -15,7 +15,9 @@ import {
 import { usePetData } from '../composables/usePetData'
 
 defineProps<{ headerTitle?: string }>()
-
+const emit = defineEmits<{
+  navigate: [view: 'dashboard' | 'profile' | 'daily' | 'appointment' | 'settings']
+}>()
 const { currentPet, allPets, medicalRecords, isLoadingPetData, petDataError, loadPets, selectPet } =
   usePetData()
 
@@ -198,7 +200,15 @@ const currentYear = new Date().getFullYear()
               </div>
             </div>
             <div class="mt-4 p-3 bg-slate-50 rounded-xl">
-              <p class="text-xs text-slate-400 text-center">生命体征数据将在后续版本中对接 📡</p>
+              <div class="flex items-center justify-between">
+                <p class="text-xs text-slate-400">生命体征数据将在后续版本中对接 📡</p>
+                <button
+                  @click="emit('navigate', 'daily')"
+                  class="text-xs font-bold text-teal-500 hover:text-teal-600 transition-colors"
+                >
+                  去记录 →
+                </button>
+              </div>
             </div>
           </div>
 
@@ -253,24 +263,28 @@ const currentYear = new Date().getFullYear()
           </h3>
           <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
             <div
+              @click="emit('navigate', 'appointment')"
               class="flex flex-col items-center gap-2 p-4 bg-teal-50 rounded-2xl hover:bg-teal-100 transition-colors cursor-pointer group"
             >
               <span class="text-2xl">💉</span>
               <span class="text-xs font-bold text-teal-700 text-center">疫苗记录</span>
             </div>
             <div
+              @click="emit('navigate', 'appointment')"
               class="flex flex-col items-center gap-2 p-4 bg-blue-50 rounded-2xl hover:bg-blue-100 transition-colors cursor-pointer group"
             >
               <span class="text-2xl">💊</span>
               <span class="text-xs font-bold text-blue-700 text-center">用药管理</span>
             </div>
             <div
+              @click="emit('navigate', 'daily')"
               class="flex flex-col items-center gap-2 p-4 bg-amber-50 rounded-2xl hover:bg-amber-100 transition-colors cursor-pointer group"
             >
               <span class="text-2xl">🍖</span>
               <span class="text-xs font-bold text-amber-700 text-center">饮食记录</span>
             </div>
             <div
+              @click="emit('navigate', 'appointment')"
               class="flex flex-col items-center gap-2 p-4 bg-purple-50 rounded-2xl hover:bg-purple-100 transition-colors cursor-pointer group"
             >
               <span class="text-2xl">📅</span>

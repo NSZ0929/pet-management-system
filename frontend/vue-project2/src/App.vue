@@ -185,7 +185,11 @@ const navigation = [
 
         <transition name="fade" mode="out-in">
           <div :key="currentView">
-            <DashboardView v-if="currentView === 'dashboard'" :header-title="headerTitle" />
+            <DashboardView
+              v-if="currentView === 'dashboard'"
+              :header-title="headerTitle"
+              @navigate="handleNavigationClick"
+            />
             <PetProfileView v-else-if="currentView === 'profile'" :header-title="headerTitle" />
             <DailyLogView v-else-if="currentView === 'daily'" :header-title="headerTitle" />
             <AppointmentView
