@@ -1,9 +1,8 @@
 <script setup lang="ts">
-import { onMounted, computed } from 'vue'
+import { onMounted, computed, ref, watch } from 'vue'
 import {
   Thermometer,
   Scale,
-  Clock,
   CheckCircle,
   FileText,
   Loader2,
@@ -11,13 +10,17 @@ import {
   PawPrint,
   ChevronDown,
   Activity,
+  Plus,
+  X,
 } from 'lucide-vue-next'
 import { usePetData } from '../composables/usePetData'
+import { addVitalSign, getVitalSigns, type VitalSign } from '../api/dailyLog'
 
 defineProps<{ headerTitle?: string }>()
 const emit = defineEmits<{
-  navigate: [view: 'dashboard' | 'profile' | 'daily' | 'appointment' | 'settings']
+  navigate: [view: 'dashboard' | 'profile' | 'daily' | 'appointment' | 'settings' | 'medical']
 }>()
+
 const { currentPet, allPets, medicalRecords, isLoadingPetData, petDataError, loadPets, selectPet } =
   usePetData()
 
@@ -25,11 +28,59 @@ onMounted(() => {
   loadPets()
 })
 
-// 最近3条医疗记录作为"就诊记录"展示
-const recentRecords = computed(() => medicalRecords.value.slice(0, 3))
-
-// 当前年份
+const recentRecords = computed(() => medicalRecords.value.slice(0, 4))
 const currentYear = new Date().getFullYear()
+
+// ── 生命体征 ──────────────────────────────────────────────
+const vitalSigns = ref<VitalSign[]>([])
+const vitalLoading = ref(false)
+const showVitalForm = ref(false)
+const vitalSubmitting = ref(false)
+const newVital = ref({ temperature: '', weight: '' })
+const latestVital = computed(() => vitalSigns.value[0] ?? null)
+
+const loadVitalSigns = async () => {
+  if (!currentPet.value?.id) return
+  vitalLoading.value = true
+  try {
+    const res = await getVitalSigns(currentPet.value.id)
+    vitalSigns.value = res.data.sort(
+      (a, b) => new Date(b.recordTime ?? 0).getTime() - new Date(a.recordTime ?? 0).getTime(),
+    )
+  } catch {
+    console.error('加载生命体征失败')
+  } finally {
+    vitalLoading.value = false
+  }
+}
+
+const submitVitalSign = async () => {
+  if (!currentPet.value?.id) return
+  if (!newVital.value.temperature && !newVital.value.weight) return
+  vitalSubmitting.value = true
+  try {
+    await addVitalSign({
+      petId: currentPet.value.id,
+      temperature: newVital.value.temperature ? Number(newVital.value.temperature) : undefined,
+      weight: newVital.value.weight ? Number(newVital.value.weight) : undefined,
+    })
+    await loadVitalSigns()
+    showVitalForm.value = false
+    newVital.value = { temperature: '', weight: '' }
+  } catch {
+    console.error('添加生命体征失败')
+  } finally {
+    vitalSubmitting.value = false
+  }
+}
+
+watch(
+  () => currentPet.value?.id,
+  () => {
+    loadVitalSigns()
+  },
+  { immediate: true },
+)
 </script>
 
 <template>
@@ -52,7 +103,7 @@ const currentYear = new Date().getFullYear()
       <p class="text-sm font-medium">{{ petDataError }}</p>
     </div>
 
-    <!-- 无宠物数据 -->
+    <!-- 无宠物 -->
     <div
       v-else-if="allPets.length === 0"
       class="text-center py-20 bg-white rounded-3xl shadow-lg border border-slate-100"
@@ -63,10 +114,10 @@ const currentYear = new Date().getFullYear()
     </div>
 
     <!-- 主内容 -->
-    <div v-else class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-      <!-- 左侧列 -->
-      <div class="lg:col-span-1 space-y-6">
-        <!-- 宠物选择器（多宠物时显示） -->
+    <div v-else class="grid grid-cols-1 lg:grid-cols-3 gap-6 items-stretch">
+      <!-- ── 左侧列 ── -->
+      <div class="lg:col-span-1 flex flex-col gap-6">
+        <!-- 宠物选择器 -->
         <div
           v-if="allPets.length > 1"
           class="bg-white rounded-2xl p-4 shadow-md border border-slate-100"
@@ -99,14 +150,12 @@ const currentYear = new Date().getFullYear()
         </div>
 
         <!-- 宠物卡片 -->
-        <div class="bg-white rounded-3xl p-5 shadow-lg border border-slate-100">
-          <!-- 头像占位 -->
+        <div class="bg-white rounded-3xl p-5 shadow-lg border border-slate-100 flex-1">
           <div
             class="aspect-[4/3] rounded-2xl overflow-hidden mb-4 bg-gradient-to-br from-teal-50 to-cyan-100 flex items-center justify-center"
           >
             <PawPrint :size="64" class="text-teal-300" />
           </div>
-
           <div class="space-y-2 px-1 pb-1">
             <div class="flex items-center justify-between bg-slate-50 p-3 rounded-xl">
               <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">Name</span>
@@ -118,9 +167,9 @@ const currentYear = new Date().getFullYear()
             </div>
             <div class="flex items-center justify-between bg-slate-50 p-3 rounded-xl">
               <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">Age</span>
-              <span class="font-bold text-slate-700">
-                {{ currentPet?.age != null ? `${currentPet.age} 岁` : '暂未填写' }}
-              </span>
+              <span class="font-bold text-slate-700">{{
+                currentPet?.age != null ? `${currentPet.age} 岁` : '暂未填写'
+              }}</span>
             </div>
             <div class="flex items-center justify-between bg-slate-50 p-3 rounded-xl">
               <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">Owner</span>
@@ -130,63 +179,79 @@ const currentYear = new Date().getFullYear()
             </div>
           </div>
         </div>
-
-        <!-- 就诊记录 -->
-        <div class="bg-white rounded-3xl p-6 shadow-lg border border-slate-100">
-          <h3 class="font-bold text-slate-800 mb-4 flex items-center justify-between">
-            就诊记录 Medical Records
-            <span class="text-xs bg-slate-100 text-slate-500 px-2 py-1 rounded-lg">{{
-              currentYear
-            }}</span>
-          </h3>
-
-          <!-- 空状态 -->
-          <div v-if="recentRecords.length === 0" class="text-center py-6">
-            <FileText :size="32" class="text-slate-200 mx-auto mb-2" />
-            <p class="text-sm text-slate-400">暂无就诊记录</p>
-          </div>
-
-          <!-- 记录列表 -->
-          <div v-else class="space-y-3">
-            <div
-              v-for="record in recentRecords"
-              :key="record.id"
-              class="flex items-start gap-3 p-3 bg-slate-50 rounded-xl hover:border-teal-100 border border-transparent transition-colors"
-            >
-              <CheckCircle :size="16" class="text-teal-500 mt-0.5 shrink-0" />
-              <div class="flex-1 min-w-0">
-                <p class="text-sm font-bold text-slate-700 truncate">{{ record.title }}</p>
-                <p class="text-xs text-slate-400 mt-0.5">{{ record.visitDate }}</p>
-                <p v-if="record.description" class="text-xs text-slate-500 mt-0.5 truncate">
-                  {{ record.description }}
-                </p>
-              </div>
-            </div>
-          </div>
-
-          <button
-            class="w-full mt-4 py-2.5 bg-teal-500 hover:bg-teal-600 text-white rounded-xl text-sm font-bold shadow-md shadow-teal-100 transition-all flex items-center justify-center gap-2"
-          >
-            <FileText :size="15" /> 查看完整报告
-          </button>
-        </div>
       </div>
 
-      <!-- 右侧区域 -->
+      <!-- ── 右侧区域 ── -->
       <div class="lg:col-span-2 space-y-6">
-        <!-- 生命体征卡片 -->
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <!-- Vital Signs -->
-          <div class="bg-white rounded-3xl p-6 shadow-lg border border-slate-100">
-            <h3 class="font-bold text-slate-800 mb-5">生命体征 Vital Signs</h3>
-            <div class="space-y-4">
+        <!-- 上排：生命体征 + 就诊记录 -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 items-stretch">
+          <!-- 生命体征 -->
+          <div class="bg-white rounded-3xl p-6 shadow-lg border border-slate-100 flex flex-col">
+            <div class="flex items-center justify-between mb-4">
+              <h3 class="font-bold text-slate-800">生命体征 Vital Signs</h3>
+              <button
+                @click="showVitalForm = !showVitalForm"
+                class="flex items-center gap-1 text-xs font-bold px-3 py-1.5 rounded-xl transition-all"
+                :class="
+                  showVitalForm
+                    ? 'bg-slate-100 text-slate-500'
+                    : 'bg-teal-50 text-teal-600 hover:bg-teal-100'
+                "
+              >
+                <component :is="showVitalForm ? X : Plus" :size="13" />
+                {{ showVitalForm ? '取消' : '记录' }}
+              </button>
+            </div>
+
+            <!-- 添加表单 -->
+            <div v-if="showVitalForm" class="mb-4 p-3 bg-slate-50 rounded-xl space-y-3">
+              <div class="grid grid-cols-2 gap-2">
+                <div>
+                  <label class="text-xs font-bold text-slate-400 block mb-1">体温 (°C)</label>
+                  <input
+                    v-model="newVital.temperature"
+                    type="number"
+                    step="0.1"
+                    placeholder="38.5"
+                    class="w-full px-3 py-2 rounded-xl border border-slate-200 text-sm focus:outline-none focus:border-teal-400 bg-white"
+                  />
+                </div>
+                <div>
+                  <label class="text-xs font-bold text-slate-400 block mb-1">体重 (kg)</label>
+                  <input
+                    v-model="newVital.weight"
+                    type="number"
+                    step="0.1"
+                    placeholder="5.0"
+                    class="w-full px-3 py-2 rounded-xl border border-slate-200 text-sm focus:outline-none focus:border-teal-400 bg-white"
+                  />
+                </div>
+              </div>
+              <button
+                @click="submitVitalSign"
+                :disabled="vitalSubmitting"
+                class="w-full py-2 bg-teal-500 hover:bg-teal-600 disabled:bg-teal-300 text-white rounded-xl text-sm font-bold transition-all flex items-center justify-center gap-2"
+              >
+                <Loader2 v-if="vitalSubmitting" :size="13" class="animate-spin" />
+                {{ vitalSubmitting ? '保存中...' : '✓ 保存记录' }}
+              </button>
+            </div>
+
+            <!-- 数据显示 -->
+            <div v-if="vitalLoading" class="flex justify-center py-4">
+              <Loader2 :size="20" class="animate-spin text-teal-400" />
+            </div>
+            <div v-else class="space-y-3">
               <div class="flex items-center gap-3">
                 <div class="w-9 h-9 rounded-xl bg-red-50 flex items-center justify-center">
                   <Thermometer :size="18" class="text-red-400" />
                 </div>
                 <div>
                   <p class="text-xs text-slate-400 font-bold uppercase">体温 Temperature</p>
-                  <p class="text-base font-bold text-slate-400 italic">暂未记录</p>
+                  <p v-if="latestVital?.temperature" class="text-base font-bold text-slate-700">
+                    {{ latestVital.temperature }} °C
+                  </p>
+                  <p v-else class="text-base font-bold text-slate-400 italic">暂未记录</p>
                 </div>
               </div>
               <div class="flex items-center gap-3">
@@ -195,67 +260,75 @@ const currentYear = new Date().getFullYear()
                 </div>
                 <div>
                   <p class="text-xs text-slate-400 font-bold uppercase">体重 Weight</p>
-                  <p class="text-base font-bold text-slate-400 italic">暂未记录</p>
+                  <p v-if="latestVital?.weight" class="text-base font-bold text-slate-700">
+                    {{ latestVital.weight }} kg
+                  </p>
+                  <p v-else class="text-base font-bold text-slate-400 italic">暂未记录</p>
                 </div>
               </div>
             </div>
-            <div class="mt-4 p-3 bg-slate-50 rounded-xl">
-              <div class="flex items-center justify-between">
-                <p class="text-xs text-slate-400">生命体征数据将在后续版本中对接 📡</p>
-                <button
-                  @click="emit('navigate', 'daily')"
-                  class="text-xs font-bold text-teal-500 hover:text-teal-600 transition-colors"
+
+            <!-- 历史记录 -->
+            <div v-if="vitalSigns.length > 1" class="mt-4">
+              <p class="text-xs font-bold text-slate-400 mb-2">历史记录</p>
+              <div class="max-h-32 overflow-y-auto space-y-1 pr-1">
+                <div
+                  v-for="vs in vitalSigns.slice(1)"
+                  :key="vs.id"
+                  class="flex items-center justify-between text-xs text-slate-500 bg-slate-50 px-3 py-1.5 rounded-lg"
                 >
-                  去记录 →
-                </button>
+                  <span class="text-slate-400">{{
+                    vs.recordTime ? new Date(vs.recordTime).toLocaleDateString('zh-CN') : '—'
+                  }}</span>
+                  <span v-if="vs.temperature">🌡 {{ vs.temperature }}°C</span>
+                  <span v-if="vs.weight">⚖️ {{ vs.weight }}kg</span>
+                </div>
               </div>
             </div>
+            <p class="mt-3 text-xs text-slate-400 text-center">共 {{ vitalSigns.length }} 条记录</p>
           </div>
 
-          <!-- 活动图表 -->
-          <div class="bg-white rounded-3xl p-6 shadow-lg border border-slate-100">
-            <div class="flex justify-between items-start mb-4">
-              <h3 class="font-bold text-slate-800">活动趋势 Activity</h3>
-              <span class="text-xs text-slate-400 flex items-center gap-1">
-                <Clock :size="12" /> 今日
-              </span>
+          <!-- 就诊记录 -->
+          <div class="bg-white rounded-3xl p-6 shadow-lg border border-slate-100 flex flex-col">
+            <h3 class="font-bold text-slate-800 mb-4 flex items-center justify-between">
+              就诊记录 Medical Records
+              <span class="text-xs bg-slate-100 text-slate-500 px-2 py-1 rounded-lg">{{
+                currentYear
+              }}</span>
+            </h3>
+
+            <div
+              v-if="recentRecords.length === 0"
+              class="flex-1 flex flex-col items-center justify-center py-6"
+            >
+              <FileText :size="32" class="text-slate-200 mb-2" />
+              <p class="text-sm text-slate-400">暂无就诊记录</p>
             </div>
-            <div class="h-28 w-full relative">
-              <svg
-                viewBox="0 0 300 100"
-                class="w-full h-full overflow-visible"
-                preserveAspectRatio="none"
+
+            <div v-else class="flex-1 space-y-2">
+              <div
+                v-for="record in recentRecords"
+                :key="record.id"
+                class="flex items-start gap-3 p-3 bg-slate-50 rounded-xl border border-transparent hover:border-teal-100 transition-colors"
               >
-                <defs>
-                  <linearGradient id="chartGradient" x1="0%" y1="0%" x2="0%" y2="100%">
-                    <stop offset="0%" style="stop-color: #14b8a6; stop-opacity: 0.15" />
-                    <stop offset="100%" style="stop-color: #14b8a6; stop-opacity: 0" />
-                  </linearGradient>
-                </defs>
-                <path
-                  d="M0,80 C50,80 50,20 100,20 C150,20 150,60 200,60 C250,60 250,10 300,10 L300,100 L0,100 Z"
-                  fill="url(#chartGradient)"
-                />
-                <path
-                  d="M0,80 C50,80 50,20 100,20 C150,20 150,60 200,60 C250,60 250,10 300,10"
-                  fill="none"
-                  stroke="#14B8A6"
-                  stroke-width="2.5"
-                  stroke-linecap="round"
-                />
-                <circle cx="100" cy="20" r="3.5" fill="white" stroke="#14B8A6" stroke-width="2" />
-                <circle cx="200" cy="60" r="3.5" fill="white" stroke="#14B8A6" stroke-width="2" />
-                <circle cx="300" cy="10" r="3.5" fill="white" stroke="#14B8A6" stroke-width="2" />
-              </svg>
-              <div class="flex justify-between text-[10px] text-slate-300 mt-1">
-                <span>早</span><span>午</span><span>晚</span><span>现在</span>
+                <CheckCircle :size="15" class="text-teal-500 mt-0.5 shrink-0" />
+                <div class="flex-1 min-w-0">
+                  <p class="text-sm font-bold text-slate-700 truncate">{{ record.title }}</p>
+                  <p class="text-xs text-slate-400 mt-0.5">{{ record.visitDate }}</p>
+                </div>
               </div>
             </div>
-            <p class="text-xs text-slate-400 text-center mt-2">活动数据来自「日记」模块记录</p>
+
+            <button
+              @click="emit('navigate', 'medical')"
+              class="w-full mt-4 py-2.5 bg-teal-500 hover:bg-teal-600 text-white rounded-xl text-sm font-bold shadow-md shadow-teal-100 transition-all flex items-center justify-center gap-2"
+            >
+              <FileText :size="15" /> 查看完整报告
+            </button>
           </div>
         </div>
 
-        <!-- 快速导航卡片 -->
+        <!-- 快速入口 -->
         <div class="bg-white rounded-3xl p-6 shadow-lg border border-slate-100">
           <h3 class="font-bold text-slate-800 mb-5 flex items-center gap-2">
             <Activity :size="18" class="text-teal-500" />
@@ -264,36 +337,36 @@ const currentYear = new Date().getFullYear()
           <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
             <div
               @click="emit('navigate', 'appointment')"
-              class="flex flex-col items-center gap-2 p-4 bg-teal-50 rounded-2xl hover:bg-teal-100 transition-colors cursor-pointer group"
+              class="flex flex-col items-center gap-2 p-4 bg-teal-50 rounded-2xl hover:bg-teal-100 transition-colors cursor-pointer"
             >
               <span class="text-2xl">💉</span>
               <span class="text-xs font-bold text-teal-700 text-center">疫苗记录</span>
             </div>
             <div
               @click="emit('navigate', 'appointment')"
-              class="flex flex-col items-center gap-2 p-4 bg-blue-50 rounded-2xl hover:bg-blue-100 transition-colors cursor-pointer group"
+              class="flex flex-col items-center gap-2 p-4 bg-blue-50 rounded-2xl hover:bg-blue-100 transition-colors cursor-pointer"
             >
               <span class="text-2xl">💊</span>
               <span class="text-xs font-bold text-blue-700 text-center">用药管理</span>
             </div>
             <div
               @click="emit('navigate', 'daily')"
-              class="flex flex-col items-center gap-2 p-4 bg-amber-50 rounded-2xl hover:bg-amber-100 transition-colors cursor-pointer group"
+              class="flex flex-col items-center gap-2 p-4 bg-amber-50 rounded-2xl hover:bg-amber-100 transition-colors cursor-pointer"
             >
               <span class="text-2xl">🍖</span>
               <span class="text-xs font-bold text-amber-700 text-center">饮食记录</span>
             </div>
             <div
-              @click="emit('navigate', 'appointment')"
-              class="flex flex-col items-center gap-2 p-4 bg-purple-50 rounded-2xl hover:bg-purple-100 transition-colors cursor-pointer group"
+              @click="emit('navigate', 'medical')"
+              class="flex flex-col items-center gap-2 p-4 bg-purple-50 rounded-2xl hover:bg-purple-100 transition-colors cursor-pointer"
             >
-              <span class="text-2xl">📅</span>
-              <span class="text-xs font-bold text-purple-700 text-center">预约提醒</span>
+              <span class="text-2xl">📋</span>
+              <span class="text-xs font-bold text-purple-700 text-center">医疗记录</span>
             </div>
           </div>
         </div>
 
-        <!-- 宠物主人信息摘要 -->
+        <!-- 主人信息摘要 -->
         <div class="bg-white rounded-3xl p-6 shadow-lg border border-slate-100">
           <h3 class="font-bold text-slate-800 mb-4">主人信息摘要 Owner Summary</h3>
           <div v-if="currentPet?.owner" class="grid grid-cols-1 md:grid-cols-3 gap-3">

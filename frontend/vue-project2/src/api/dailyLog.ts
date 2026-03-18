@@ -29,10 +29,9 @@ export const deleteDailyLog = (id: number) => http.delete(`/daily-logs/${id}`)
 export interface VitalSign {
   id?: number
   petId: number
-  temperature?: number // 体温
-  weight?: number // 体重
-  recordedAt?: string
-  note?: string
+  temperature?: number
+  weight?: number
+  recordTime?: string // ← 和后端字段名一致
 }
 
 export const addVitalSign = (vs: VitalSign) => http.post<VitalSign>('/vital-signs', vs)

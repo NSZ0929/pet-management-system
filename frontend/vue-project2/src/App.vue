@@ -7,6 +7,7 @@ import DailyLogView from './views/DailyLogView.vue'
 import AppointmentView from './views/AppointmentView.vue'
 import LoginView from './views/LoginView.vue'
 import SettingsView from './views/SettingsView.vue'
+import MedicalRecordView from './views/MedicalRecordView.vue'
 import {
   Home,
   User,
@@ -17,6 +18,7 @@ import {
   PawPrint,
   ClipboardList,
   CalendarDays,
+  FileText,
 } from 'lucide-vue-next'
 
 // ── 登录状态 ───────────────────────────────────────────────
@@ -42,7 +44,7 @@ const handleLogout = () => {
 }
 
 // ── 视图状态管理 ───────────────────────────────────────────
-type View = 'dashboard' | 'profile' | 'daily' | 'appointment' | 'settings'
+type View = 'dashboard' | 'profile' | 'daily' | 'appointment' | 'settings' | 'medical'
 const currentView = ref<View>('dashboard')
 const isSidebarOpen = ref(false)
 
@@ -70,6 +72,9 @@ const updateHeaderTitle = (view: View) => {
     case 'appointment':
       headerTitle.value = '预约与通知 Appointment & Reminders'
       break
+    case 'medical':
+      headerTitle.value = '医疗记录 Medical Records'
+      break
     default:
       headerTitle.value = '宠物应用'
   }
@@ -88,6 +93,7 @@ const navigation = [
   { name: '档案 Profile', icon: User, view: 'profile' as View },
   { name: '日记 Daily Log', icon: ClipboardList, view: 'daily' as View },
   { name: '预约 Appointment', icon: CalendarDays, view: 'appointment' as View },
+  { name: '病历 Medical', icon: FileText, view: 'medical' as View },
   { name: '设置 Settings', icon: Settings, view: 'settings' as View },
 ]
 </script>
@@ -196,6 +202,7 @@ const navigation = [
               v-else-if="currentView === 'appointment'"
               :header-title="headerTitle"
             />
+            <MedicalRecordView v-else-if="currentView === 'medical'" />
             <SettingsView v-else-if="currentView === 'settings'" />
           </div>
         </transition>
