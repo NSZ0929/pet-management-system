@@ -8,7 +8,7 @@ import jakarta.persistence.*;
  */
 @Entity
 @Table(name = "pets")
-@JsonIgnoreProperties("owner") // 防止序列化时递归
+
 public class Pet {
 
     @Id
@@ -22,7 +22,7 @@ public class Pet {
 
     private Integer age; // 年龄，可空
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @ManyToOne(fetch = FetchType.EAGER, optional = false)
     @JoinColumn(name = "owner_id", nullable = false)
     @JsonIgnoreProperties("pets") // 防止序列化 Owner 时递归
     private Owner owner;
