@@ -25,4 +25,8 @@ public class VitalSignController {
     public List<VitalSign> get(@RequestParam Long petId) {
         return service.getByPet(petId);
     }
+        @DeleteMapping("/{id}")
+    public void delete(@PathVariable Long id) {
+        service.delete(id);
+    }
 }

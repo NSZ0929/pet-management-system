@@ -22,4 +22,7 @@ public class VitalSignService {
     public List<VitalSign> getByPet(Long petId) {
         return repository.findByPetId(petId);
     }
+    public void delete(Long id) {
+    repository.deleteById(id);
+}
 }
