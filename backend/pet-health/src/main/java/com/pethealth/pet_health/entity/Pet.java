@@ -56,4 +56,9 @@ public class Pet {
 
     public Owner getOwner() { return owner; }
     public void setOwner(Owner owner) { this.owner = owner; }
+
+    private String avatar; // 头像图片路径
+
+    public String getAvatar() { return avatar; }
+    public void setAvatar(String avatar) { this.avatar = avatar; }
 }
