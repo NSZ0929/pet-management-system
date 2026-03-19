@@ -50,6 +50,8 @@ public class JwtSecurityConfig {
     
         // 3. 开放预检请求
         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+
+        .requestMatchers("/avatars/**").permitAll()
     
          // 4. 所有其他请求都需要认证
          .anyRequest().authenticated()
