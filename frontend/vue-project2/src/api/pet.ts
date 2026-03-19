@@ -22,13 +22,6 @@ export interface Pet {
   avatar?: string // ← 新增头像字段
 }
 
-export interface MedicalRecord {
-  id: number
-  title: string
-  description: string
-  visitDate: string
-}
-
 export interface AddPetPayload {
   name?: string
   breed?: string
@@ -69,8 +62,3 @@ export const addOwner = (owner: Partial<Owner>) => http.post<Owner>('/owners', o
 
 export const updateOwner = (id: number, owner: Partial<Owner>) =>
   http.put<Owner>(`/owners/${id}`, owner)
-
-// ── 医疗记录 API ──────────────────────────────────────────
-
-export const getMedicalRecordsByPet = (petId: number) =>
-  http.get<MedicalRecord[]>(`/medical-records/pet/${petId}`)

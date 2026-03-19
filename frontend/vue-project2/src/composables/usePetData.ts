@@ -1,5 +1,6 @@
 import { ref } from 'vue'
-import { getAllPets, getMedicalRecordsByPet, type Pet, type MedicalRecord } from '../api/pet'
+import { getAllPets, type Pet } from '../api/pet'
+import { getMedicalRecordsByPet, type MedicalRecord } from '../api/medicalRecord'
 
 // ── 加载状态 ──────────────────────────────────────────────
 export const isLoadingPetData = ref(false)

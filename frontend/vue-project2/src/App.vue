@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 // 导入所有需要的视图组件
 import DashboardView from './views/DashboardView.vue'
 import PetProfileView from './views/PetProfileView.vue'
@@ -8,6 +8,8 @@ import AppointmentView from './views/AppointmentView.vue'
 import LoginView from './views/LoginView.vue'
 import SettingsView from './views/SettingsView.vue'
 import MedicalRecordView from './views/MedicalRecordView.vue'
+import NotificationPanel from './components/NotificationPanel.vue'
+import { currentPet } from './composables/usePetData'
 import {
   Home,
   User,
@@ -96,6 +98,9 @@ const navigation = [
   { name: '病历 Medical', icon: FileText, view: 'medical' as View },
   { name: '设置 Settings', icon: Settings, view: 'settings' as View },
 ]
+
+// 当前宠物 ID（传给通知面板）
+const currentPetId = computed(() => currentPet.value?.id ?? null)
 </script>
 
 <template>
@@ -167,8 +172,11 @@ const navigation = [
           <h1 class="text-2xl font-bold text-slate-800">{{ headerTitle }}</h1>
         </div>
 
-        <!-- 用户头像 -->
+        <!-- 右侧：通知 + 用户头像 -->
         <div class="flex items-center gap-3">
+          <!-- 通知面板 -->
+          <NotificationPanel :pet-id="currentPetId" />
+
           <div class="text-right hidden sm:block">
             <p class="text-sm font-bold text-slate-700">{{ currentUser?.username }}</p>
             <p class="text-xs text-slate-400">{{ currentUser?.role }}</p>

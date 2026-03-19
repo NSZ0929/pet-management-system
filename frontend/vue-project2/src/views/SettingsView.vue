@@ -4,9 +4,6 @@ import {
   User,
   Lock,
   Bell,
-  Globe,
-  Moon,
-  Sun,
   Info,
   Check,
   Eye,
@@ -23,7 +20,7 @@ import { changePassword, updateUsername } from '../api/auth'
 
 defineProps<{ headerTitle?: string }>()
 
-const activeSection = ref<'profile' | 'security' | 'notifications' | 'preferences' | 'about'>(
+const activeSection = ref<'profile' | 'security' | 'notifications' | 'about'>(
   'profile',
 )
 
@@ -130,13 +127,6 @@ const notifications = reactive({
   pushNotify: true,
 })
 
-// ── 系统偏好 ──────────────────────────────────────────────
-const preferences = reactive({
-  theme: 'light' as 'light' | 'dark',
-  language: 'zh-CN',
-  compactMode: false,
-})
-
 // ── 关于应用 ──────────────────────────────────────────────
 const appInfo = {
   name: 'PetCare',
@@ -151,13 +141,6 @@ const sections = [
   { key: 'profile', label: '个人信息', icon: User, color: 'text-teal-500', bg: 'bg-teal-50' },
   { key: 'security', label: '账号安全', icon: Lock, color: 'text-amber-500', bg: 'bg-amber-50' },
   { key: 'notifications', label: '通知设置', icon: Bell, color: 'text-blue-500', bg: 'bg-blue-50' },
-  {
-    key: 'preferences',
-    label: '系统偏好',
-    icon: Globe,
-    color: 'text-purple-500',
-    bg: 'bg-purple-50',
-  },
   { key: 'about', label: '关于应用', icon: Info, color: 'text-slate-500', bg: 'bg-slate-100' },
 ] as const
 </script>
@@ -491,129 +474,6 @@ const sections = [
               />
             </button>
           </div>
-        </div>
-      </div>
-
-      <!-- 系统偏好 -->
-      <div
-        v-else-if="activeSection === 'preferences'"
-        class="bg-white rounded-3xl p-7 shadow-lg border border-slate-100 space-y-6"
-      >
-        <div class="flex items-center gap-3 pb-4 border-b border-slate-100">
-          <div class="w-9 h-9 rounded-xl bg-purple-50 flex items-center justify-center">
-            <Globe :size="18" class="text-purple-500" />
-          </div>
-          <div>
-            <h2 class="font-bold text-lg text-slate-800">系统偏好</h2>
-            <p class="text-xs text-slate-400">自定义你的使用体验</p>
-          </div>
-        </div>
-        <div class="space-y-3">
-          <label class="text-sm font-bold text-slate-600">主题 Theme</label>
-          <div class="grid grid-cols-2 gap-3">
-            <button
-              @click="preferences.theme = 'light'"
-              :class="[
-                'flex items-center gap-3 p-4 rounded-2xl border-2 transition-all',
-                preferences.theme === 'light'
-                  ? 'border-teal-400 bg-teal-50'
-                  : 'border-slate-100 bg-slate-50 hover:border-slate-200',
-              ]"
-            >
-              <div
-                class="w-8 h-8 rounded-lg bg-white border border-slate-200 flex items-center justify-center shadow-sm"
-              >
-                <Sun :size="16" class="text-amber-500" />
-              </div>
-              <div class="text-left">
-                <p class="text-sm font-bold text-slate-700">浅色</p>
-                <p class="text-xs text-slate-400">Light Mode</p>
-              </div>
-              <Check
-                v-if="preferences.theme === 'light'"
-                :size="16"
-                class="ml-auto text-teal-500"
-              />
-            </button>
-            <button
-              @click="preferences.theme = 'dark'"
-              :class="[
-                'flex items-center gap-3 p-4 rounded-2xl border-2 transition-all',
-                preferences.theme === 'dark'
-                  ? 'border-teal-400 bg-teal-50'
-                  : 'border-slate-100 bg-slate-50 hover:border-slate-200',
-              ]"
-            >
-              <div
-                class="w-8 h-8 rounded-lg bg-slate-800 flex items-center justify-center shadow-sm"
-              >
-                <Moon :size="16" class="text-slate-300" />
-              </div>
-              <div class="text-left">
-                <p class="text-sm font-bold text-slate-700">深色</p>
-                <p class="text-xs text-slate-400">Dark Mode</p>
-              </div>
-              <Check v-if="preferences.theme === 'dark'" :size="16" class="ml-auto text-teal-500" />
-            </button>
-          </div>
-          <p class="text-xs text-slate-400 bg-slate-50 px-3 py-2 rounded-xl">
-            🚧 深色模式将在后续版本中实装
-          </p>
-        </div>
-        <div class="space-y-2">
-          <label class="text-sm font-bold text-slate-600">语言 Language</label>
-          <div class="grid grid-cols-2 gap-3">
-            <button
-              @click="preferences.language = 'zh-CN'"
-              :class="[
-                'flex items-center gap-2 p-3 rounded-xl border-2 transition-all text-sm font-bold',
-                preferences.language === 'zh-CN'
-                  ? 'border-teal-400 bg-teal-50 text-teal-700'
-                  : 'border-slate-100 bg-slate-50 text-slate-600',
-              ]"
-            >
-              <span class="text-lg">🇨🇳</span> 中文<Check
-                v-if="preferences.language === 'zh-CN'"
-                :size="14"
-                class="ml-auto"
-              />
-            </button>
-            <button
-              @click="preferences.language = 'en'"
-              :class="[
-                'flex items-center gap-2 p-3 rounded-xl border-2 transition-all text-sm font-bold',
-                preferences.language === 'en'
-                  ? 'border-teal-400 bg-teal-50 text-teal-700'
-                  : 'border-slate-100 bg-slate-50 text-slate-600',
-              ]"
-            >
-              <span class="text-lg">🇬🇧</span> English<Check
-                v-if="preferences.language === 'en'"
-                :size="14"
-                class="ml-auto"
-              />
-            </button>
-          </div>
-        </div>
-        <div class="flex items-center justify-between p-4 bg-slate-50 rounded-2xl">
-          <div>
-            <p class="text-sm font-bold text-slate-700">紧凑模式</p>
-            <p class="text-xs text-slate-400">减少间距，显示更多内容</p>
-          </div>
-          <button
-            @click="preferences.compactMode = !preferences.compactMode"
-            :class="[
-              'relative w-11 h-6 rounded-full transition-all duration-300',
-              preferences.compactMode ? 'bg-purple-500' : 'bg-slate-200',
-            ]"
-          >
-            <div
-              :class="[
-                'absolute top-0.5 w-5 h-5 bg-white rounded-full shadow transition-all duration-300',
-                preferences.compactMode ? 'left-5' : 'left-0.5',
-              ]"
-            />
-          </button>
         </div>
       </div>
 

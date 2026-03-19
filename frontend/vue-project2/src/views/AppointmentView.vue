@@ -22,7 +22,7 @@ import {
   UserRound,
 } from 'lucide-vue-next'
 import {
-  getAllAppointments,
+  getAppointmentsByPet,
   addAppointment,
   deleteAppointment,
   getAllVets,
@@ -63,16 +63,12 @@ const error = ref('')
 
 // 加载预约列表
 const loadAppointments = async () => {
+  if (!currentPet.value) return
   loading.value = true
   error.value = ''
   try {
-    const res = await getAllAppointments()
-    // 只展示当前宠物的预约
-    if (currentPet.value) {
-      appointments.value = res.data.filter(a => a.pet.id === currentPet.value!.id)
-    } else {
-      appointments.value = res.data
-    }
+    const res = await getAppointmentsByPet(currentPet.value.id)
+    appointments.value = res.data
   } catch (err) {
     error.value = '加载预约失败，请检查后端连接'
     console.error(err)
