@@ -28,7 +28,10 @@ public class Owner {
     private String contact;
 
     private String address;
-
+    private String environment;  // 居住环境，如"公寓"
+    private String homeTemperature;  // 环境气温，如"24°C"  // 环境气温，如"24°C"
+    private String otherPets;    // 其他宠物，如"1只猫"
+    private Integer members;     // 家庭成员数
     @OneToMany(mappedBy = "owner", cascade = CascadeType.ALL, orphanRemoval = true)
     private Set<Pet> pets = new HashSet<>();
 
@@ -56,6 +59,17 @@ public class Owner {
     public Set<Pet> getPets() { return pets; }
     public void setPets(Set<Pet> pets) { this.pets = pets; }
 
+    public String getEnvironment() { return environment; }
+    public void setEnvironment(String environment) { this.environment = environment; }
+
+    public String getHomeTemperature() { return homeTemperature; }
+    public void setHomeTemperature(String homeTemperature) { this.homeTemperature = homeTemperature; }
+
+    public String getOtherPets() { return otherPets; }
+    public void setOtherPets(String otherPets) { this.otherPets = otherPets; }
+
+    public Integer getMembers() { return members; }
+    public void setMembers(Integer members) { this.members = members; }
     // ======= 双向关系维护 =======
     public void addPet(Pet pet) {
         if (pet != null) {
