@@ -20,6 +20,7 @@ import {
 } from 'lucide-vue-next'
 import { usePetData } from '../composables/usePetData'
 import { addPet, addOwner, updatePet, updateOwner } from '../api/pet'
+import PetAvatar from '../components/PetAvatar.vue'
 
 defineProps<{ headerTitle?: string }>()
 
@@ -396,11 +397,18 @@ const saveOwner = async () => {
             </div>
 
             <!-- 头像占位 -->
-            <div
-              class="aspect-[4/3] rounded-2xl overflow-hidden mb-5 bg-gradient-to-br from-teal-50 to-cyan-100 flex items-center justify-center"
-            >
-              <PawPrint :size="56" class="text-teal-300" />
-            </div>
+            <!-- 替换原来的 aspect-[4/3] 那个 div -->
+            <PetAvatar
+              :petId="currentPet?.id"
+              :avatarUrl="currentPet?.avatar"
+              :editable="true"
+              size="md"
+              @uploaded="
+                (url) => {
+                  if (currentPet) currentPet.avatar = url
+                }
+              "
+            />
 
             <!-- 查看模式 -->
             <div v-if="!isEditingPet" class="space-y-2">
@@ -451,47 +459,61 @@ const saveOwner = async () => {
           </div>
 
           <!-- 健康总结 -->
-        <div class="bg-white rounded-3xl p-6 shadow-lg border border-slate-100">
-          <h2 class="font-bold text-lg text-slate-800 mb-3 flex items-center gap-2">
-            <span class="text-lg">🩺</span> 健康总结
-          </h2>
+          <div class="bg-white rounded-3xl p-6 shadow-lg border border-slate-100">
+            <h2 class="font-bold text-lg text-slate-800 mb-3 flex items-center gap-2">
+              <span class="text-lg">🩺</span> 健康总结
+            </h2>
 
-          <!-- 无数据 -->
-          <div v-if="!latestVital" class="bg-slate-50 p-4 rounded-xl">
-            <p class="text-slate-500 font-bold text-sm">暂无体征数据</p>
-            <p class="text-xs text-slate-400 mt-1">请在「仪表盘」记录体温和体重后自动生成</p>
-          </div>
-
-          <!-- 有数据 -->
-          <div v-else class="space-y-2">
-            <!-- 综合状态 -->
-            <div :class="['p-3 rounded-xl border', healthSummary?.bg, healthSummary?.border]">
-              <p :class="['font-bold text-sm', healthSummary?.color]">{{ healthSummary?.label }}</p>
-              <p class="text-xs text-slate-400 mt-0.5">
-                最近记录：{{ latestVital.recordTime ? new Date(latestVital.recordTime).toLocaleDateString('zh-CN') : '—' }}
-              </p>
+            <!-- 无数据 -->
+            <div v-if="!latestVital" class="bg-slate-50 p-4 rounded-xl">
+              <p class="text-slate-500 font-bold text-sm">暂无体征数据</p>
+              <p class="text-xs text-slate-400 mt-1">请在「仪表盘」记录体温和体重后自动生成</p>
             </div>
 
-            <!-- 体温状态 -->
-            <div v-if="tempStatus" :class="['flex items-center gap-2 p-3 rounded-xl', tempStatus.bg]">
-              <span class="text-base">{{ tempStatus.icon }}</span>
-              <div>
-                <p :class="['text-sm font-bold', tempStatus.color]">{{ tempStatus.label }}</p>
-                <p class="text-xs text-slate-400">{{ latestVital.temperature }}°C（正常范围 38~39.5°C）</p>
+            <!-- 有数据 -->
+            <div v-else class="space-y-2">
+              <!-- 综合状态 -->
+              <div :class="['p-3 rounded-xl border', healthSummary?.bg, healthSummary?.border]">
+                <p :class="['font-bold text-sm', healthSummary?.color]">
+                  {{ healthSummary?.label }}
+                </p>
+                <p class="text-xs text-slate-400 mt-0.5">
+                  最近记录：{{
+                    latestVital.recordTime
+                      ? new Date(latestVital.recordTime).toLocaleDateString('zh-CN')
+                      : '—'
+                  }}
+                </p>
               </div>
-            </div>
 
-            <!-- 体重状态 -->
-            <div v-if="weightStatus" :class="['flex items-center gap-2 p-3 rounded-xl', weightStatus.bg]">
-              <span class="text-base">{{ weightStatus.icon }}</span>
-              <div>
-                <p :class="['text-sm font-bold', weightStatus.color]">{{ weightStatus.label }}</p>
-                <p class="text-xs text-slate-400">共 {{ vitalSigns.length }} 条体征记录</p>
+              <!-- 体温状态 -->
+              <div
+                v-if="tempStatus"
+                :class="['flex items-center gap-2 p-3 rounded-xl', tempStatus.bg]"
+              >
+                <span class="text-base">{{ tempStatus.icon }}</span>
+                <div>
+                  <p :class="['text-sm font-bold', tempStatus.color]">{{ tempStatus.label }}</p>
+                  <p class="text-xs text-slate-400">
+                    {{ latestVital.temperature }}°C（正常范围 38~39.5°C）
+                  </p>
+                </div>
+              </div>
+
+              <!-- 体重状态 -->
+              <div
+                v-if="weightStatus"
+                :class="['flex items-center gap-2 p-3 rounded-xl', weightStatus.bg]"
+              >
+                <span class="text-base">{{ weightStatus.icon }}</span>
+                <div>
+                  <p :class="['text-sm font-bold', weightStatus.color]">{{ weightStatus.label }}</p>
+                  <p class="text-xs text-slate-400">共 {{ vitalSigns.length }} 条体征记录</p>
+                </div>
               </div>
             </div>
           </div>
         </div>
-        </div> 
         <!-- 右侧：主人与家庭信息 -->
         <div class="lg:col-span-2 xl:col-span-3 grid grid-cols-1 md:grid-cols-2 gap-6">
           <!-- 主人信息 -->

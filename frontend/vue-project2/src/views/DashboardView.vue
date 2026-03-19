@@ -16,6 +16,7 @@ import {
 } from 'lucide-vue-next'
 import { usePetData } from '../composables/usePetData'
 import { addVitalSign, getVitalSigns, deleteVitalSign, type VitalSign } from '../api/dailyLog'
+import PetAvatar from '../components/PetAvatar.vue'
 
 defineProps<{ headerTitle?: string }>()
 const emit = defineEmits<{
@@ -159,11 +160,7 @@ watch(
         </div>
 
         <div class="bg-white rounded-3xl p-5 shadow-lg border border-slate-100 flex-1">
-          <div
-            class="aspect-[4/3] rounded-2xl overflow-hidden mb-4 bg-gradient-to-br from-teal-50 to-cyan-100 flex items-center justify-center"
-          >
-            <PawPrint :size="64" class="text-teal-300" />
-          </div>
+          <PetAvatar :avatarUrl="currentPet?.avatar" :editable="false" size="md" class="mb-4" />
           <div class="space-y-2 px-1 pb-1">
             <div class="flex items-center justify-between bg-slate-50 p-3 rounded-xl">
               <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">Name</span>

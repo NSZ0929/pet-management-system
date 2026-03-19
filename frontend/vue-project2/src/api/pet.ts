@@ -15,6 +15,7 @@ export interface Pet {
   breed: string
   age: number
   owner: Owner
+  avatar?: string  // ← 新增头像字段
 }
 
 export interface MedicalRecord {
@@ -24,12 +25,12 @@ export interface MedicalRecord {
   visitDate: string
 }
 
-// 新增宠物：owner 只传 id，放在请求体里
 export interface AddPetPayload {
   name?: string
   breed?: string
   age?: number
 }
+
 // ── 宠物 API ─────────────────────────────────────────────
 
 export const getAllPets = () => http.get<Pet[]>('/pets')
@@ -43,6 +44,16 @@ export const updatePet = (id: number, pet: Partial<Omit<Pet, 'id' | 'owner'>>) =
   http.put<Pet>(`/pets/${id}`, pet)
 
 export const deletePet = (id: number) => http.delete(`/pets/${id}`)
+
+// ── 头像上传 API ──────────────────────────────────────────
+// POST /upload/avatar/{petId}，返回 { avatarUrl: string }
+export const uploadAvatar = (petId: number, file: File) => {
+  const formData = new FormData()
+  formData.append('file', file)
+  return http.post<{ avatarUrl: string }>(`/upload/avatar/${petId}`, formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  })
+}
 
 // ── 主人 API ─────────────────────────────────────────────
 
