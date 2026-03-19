@@ -38,3 +38,6 @@ export const addVitalSign = (vs: VitalSign) => http.post<VitalSign>('/vital-sign
 
 export const getVitalSigns = (petId: number) =>
   http.get<VitalSign[]>('/vital-signs', { params: { petId } })
+
+export const deleteVitalSign = (id: number) =>
+  http.delete(`/vital-signs/${id}`)

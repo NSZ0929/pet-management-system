@@ -12,9 +12,10 @@ import {
   Activity,
   Plus,
   X,
+  Trash2,
 } from 'lucide-vue-next'
 import { usePetData } from '../composables/usePetData'
-import { addVitalSign, getVitalSigns, type VitalSign } from '../api/dailyLog'
+import { addVitalSign, getVitalSigns, deleteVitalSign, type VitalSign } from '../api/dailyLog'
 
 defineProps<{ headerTitle?: string }>()
 const emit = defineEmits<{
@@ -28,7 +29,7 @@ onMounted(() => {
   loadPets()
 })
 
-const recentRecords = computed(() => medicalRecords.value.slice(0, 4))
+const recentRecords = computed(() => medicalRecords.value)
 const currentYear = new Date().getFullYear()
 
 // ── 生命体征 ──────────────────────────────────────────────
@@ -36,6 +37,7 @@ const vitalSigns = ref<VitalSign[]>([])
 const vitalLoading = ref(false)
 const showVitalForm = ref(false)
 const vitalSubmitting = ref(false)
+const deletingVitalId = ref<number | null>(null)
 const newVital = ref({ temperature: '', weight: '' })
 const latestVital = computed(() => vitalSigns.value[0] ?? null)
 
@@ -74,6 +76,18 @@ const submitVitalSign = async () => {
   }
 }
 
+const handleDeleteVital = async (id: number) => {
+  deletingVitalId.value = id
+  try {
+    await deleteVitalSign(id)
+    await loadVitalSigns()
+  } catch {
+    console.error('删除失败')
+  } finally {
+    deletingVitalId.value = null
+  }
+}
+
 watch(
   () => currentPet.value?.id,
   () => {
@@ -85,7 +99,6 @@ watch(
 
 <template>
   <div class="space-y-6">
-    <!-- 加载中 -->
     <div
       v-if="isLoadingPetData"
       class="flex items-center justify-center py-20 gap-3 text-slate-400"
@@ -94,7 +107,6 @@ watch(
       <span class="text-sm font-medium">正在加载宠物数据...</span>
     </div>
 
-    <!-- 错误提示 -->
     <div
       v-else-if="petDataError"
       class="flex items-center gap-3 bg-red-50 border border-red-100 text-red-500 px-5 py-4 rounded-2xl"
@@ -103,7 +115,6 @@ watch(
       <p class="text-sm font-medium">{{ petDataError }}</p>
     </div>
 
-    <!-- 无宠物 -->
     <div
       v-else-if="allPets.length === 0"
       class="text-center py-20 bg-white rounded-3xl shadow-lg border border-slate-100"
@@ -113,11 +124,9 @@ watch(
       <p class="text-slate-400 text-sm mt-2">请先在「档案 Profile」页面添加你的宠物 🐾</p>
     </div>
 
-    <!-- 主内容 -->
     <div v-else class="grid grid-cols-1 lg:grid-cols-3 gap-6 items-stretch">
-      <!-- ── 左侧列 ── -->
+      <!-- 左侧列 -->
       <div class="lg:col-span-1 flex flex-col gap-6">
-        <!-- 宠物选择器 -->
         <div
           v-if="allPets.length > 1"
           class="bg-white rounded-2xl p-4 shadow-md border border-slate-100"
@@ -149,7 +158,6 @@ watch(
           </div>
         </div>
 
-        <!-- 宠物卡片 -->
         <div class="bg-white rounded-3xl p-5 shadow-lg border border-slate-100 flex-1">
           <div
             class="aspect-[4/3] rounded-2xl overflow-hidden mb-4 bg-gradient-to-br from-teal-50 to-cyan-100 flex items-center justify-center"
@@ -181,9 +189,8 @@ watch(
         </div>
       </div>
 
-      <!-- ── 右侧区域 ── -->
+      <!-- 右侧区域 -->
       <div class="lg:col-span-2 space-y-6">
-        <!-- 上排：生命体征 + 就诊记录 -->
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6 items-stretch">
           <!-- 生命体征 -->
           <div class="bg-white rounded-3xl p-6 shadow-lg border border-slate-100 flex flex-col">
@@ -237,7 +244,7 @@ watch(
               </button>
             </div>
 
-            <!-- 数据显示 -->
+            <!-- 最新数据 -->
             <div v-if="vitalLoading" class="flex justify-center py-4">
               <Loader2 :size="20" class="animate-spin text-teal-400" />
             </div>
@@ -268,24 +275,32 @@ watch(
               </div>
             </div>
 
-            <!-- 历史记录 -->
-            <div v-if="vitalSigns.length > 1" class="mt-4">
-              <p class="text-xs font-bold text-slate-400 mb-2">历史记录</p>
-              <div class="max-h-32 overflow-y-auto space-y-1 pr-1">
+            <!-- 历史记录：固定高度 + 滚动 + 删除按钮 -->
+            <div v-if="vitalSigns.length > 0" class="mt-4">
+              <p class="text-xs font-bold text-slate-400 mb-2">所有记录</p>
+              <div class="h-28 overflow-y-auto space-y-1 pr-1">
                 <div
-                  v-for="vs in vitalSigns.slice(1)"
+                  v-for="vs in vitalSigns"
                   :key="vs.id"
-                  class="flex items-center justify-between text-xs text-slate-500 bg-slate-50 px-3 py-1.5 rounded-lg"
+                  class="flex items-center justify-between text-xs text-slate-500 bg-slate-50 px-2 py-1.5 rounded-lg group hover:bg-red-50 transition-colors"
                 >
-                  <span class="text-slate-400">{{
+                  <span class="text-slate-400 shrink-0">{{
                     vs.recordTime ? new Date(vs.recordTime).toLocaleDateString('zh-CN') : '—'
                   }}</span>
-                  <span v-if="vs.temperature">🌡 {{ vs.temperature }}°C</span>
-                  <span v-if="vs.weight">⚖️ {{ vs.weight }}kg</span>
+                  <span v-if="vs.temperature" class="mx-1">🌡 {{ vs.temperature }}°C</span>
+                  <span v-if="vs.weight" class="mx-1">⚖️ {{ vs.weight }}kg</span>
+                  <button
+                    @click="handleDeleteVital(vs.id!)"
+                    :disabled="deletingVitalId === vs.id"
+                    class="ml-1 shrink-0 text-slate-300 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-all"
+                  >
+                    <Loader2 v-if="deletingVitalId === vs.id" :size="12" class="animate-spin" />
+                    <Trash2 v-else :size="12" />
+                  </button>
                 </div>
               </div>
             </div>
-            <p class="mt-3 text-xs text-slate-400 text-center">共 {{ vitalSigns.length }} 条记录</p>
+            <p class="mt-2 text-xs text-slate-400 text-center">共 {{ vitalSigns.length }} 条记录</p>
           </div>
 
           <!-- 就诊记录 -->
@@ -305,7 +320,8 @@ watch(
               <p class="text-sm text-slate-400">暂无就诊记录</p>
             </div>
 
-            <div v-else class="flex-1 space-y-2">
+            <!-- 就诊记录滚动列表 -->
+            <div v-else class="h-52 overflow-y-auto space-y-2 pr-1">
               <div
                 v-for="record in recentRecords"
                 :key="record.id"

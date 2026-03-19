@@ -28,7 +28,86 @@ const { currentPet, allPets, isLoadingPetData, petDataError, loadPets, selectPet
 onMounted(() => {
   loadPets()
 })
+import { computed, watch } from 'vue'
+import { getVitalSigns, type VitalSign } from '../api/dailyLog'
 
+// ── 健康总结 ──────────────────────────────────────────────
+const vitalSigns = ref<VitalSign[]>([])
+
+const loadVitalSigns = async () => {
+  if (!currentPet.value?.id) return
+  try {
+    const res = await getVitalSigns(currentPet.value.id)
+    vitalSigns.value = res.data.sort(
+      (a, b) => new Date(b.recordTime ?? 0).getTime() - new Date(a.recordTime ?? 0).getTime(),
+    )
+  } catch {
+    console.error('加载生命体征失败')
+  }
+}
+
+watch(
+  () => currentPet.value?.id,
+  () => {
+    loadVitalSigns()
+  },
+  { immediate: true },
+)
+
+const latestVital = computed(() => vitalSigns.value[0] ?? null)
+
+// 体温判断（狗：38~39.2°C，猫：38~39.5°C，通用范围 38~39.5）
+const tempStatus = computed(() => {
+  const t = latestVital.value?.temperature
+  if (t == null) return null
+  if (t < 37.5) return { label: '体温偏低', color: 'text-blue-600', bg: 'bg-blue-50', icon: '🥶' }
+  if (t > 39.5) return { label: '体温偏高', color: 'text-red-600', bg: 'bg-red-50', icon: '🔥' }
+  return { label: '体温正常', color: 'text-green-600', bg: 'bg-green-50', icon: '✅' }
+})
+
+// 体重趋势判断（对比最近两次）
+const weightStatus = computed(() => {
+  const w0 = vitalSigns.value[0]?.weight
+  const w1 = vitalSigns.value[1]?.weight
+  if (w0 == null) return null
+  if (w1 == null)
+    return { label: `体重 ${w0}kg`, color: 'text-teal-600', bg: 'bg-teal-50', icon: '⚖️' }
+  const diff = w0 - w1
+  if (diff > 0.5)
+    return {
+      label: `体重上升 +${diff.toFixed(1)}kg`,
+      color: 'text-amber-600',
+      bg: 'bg-amber-50',
+      icon: '📈',
+    }
+  if (diff < -0.5)
+    return {
+      label: `体重下降 ${diff.toFixed(1)}kg`,
+      color: 'text-blue-600',
+      bg: 'bg-blue-50',
+      icon: '📉',
+    }
+  return { label: `体重稳定 ${w0}kg`, color: 'text-green-600', bg: 'bg-green-50', icon: '✅' }
+})
+
+// 综合健康状态
+const healthSummary = computed(() => {
+  if (!latestVital.value) return null
+  const hasIssue = tempStatus.value?.icon === '🔥' || tempStatus.value?.icon === '🥶'
+  if (hasIssue)
+    return {
+      label: '需要关注',
+      color: 'text-amber-700',
+      bg: 'bg-amber-50',
+      border: 'border-amber-200',
+    }
+  return {
+    label: '健康状态良好',
+    color: 'text-green-700',
+    bg: 'bg-green-50',
+    border: 'border-green-200',
+  }
+})
 // ── 添加宠物表单 ──────────────────────────────────────────
 const showAddPetForm = ref(false)
 const isSubmitting = ref(false)
@@ -372,19 +451,47 @@ const saveOwner = async () => {
           </div>
 
           <!-- 健康总结 -->
-          <div class="bg-white rounded-3xl p-6 shadow-lg border border-slate-100">
-            <h2 class="font-bold text-lg text-slate-800 mb-3 flex items-center gap-2">
-              <span class="text-lg">🩺</span> 健康总结
-            </h2>
-            <div class="bg-teal-50 p-4 rounded-xl">
-              <p class="text-teal-700 font-bold text-sm">状态待更新</p>
-              <p class="text-xs text-teal-500 mt-1">
-                请在「日记」模块添加日常记录后自动生成健康报告
+        <div class="bg-white rounded-3xl p-6 shadow-lg border border-slate-100">
+          <h2 class="font-bold text-lg text-slate-800 mb-3 flex items-center gap-2">
+            <span class="text-lg">🩺</span> 健康总结
+          </h2>
+
+          <!-- 无数据 -->
+          <div v-if="!latestVital" class="bg-slate-50 p-4 rounded-xl">
+            <p class="text-slate-500 font-bold text-sm">暂无体征数据</p>
+            <p class="text-xs text-slate-400 mt-1">请在「仪表盘」记录体温和体重后自动生成</p>
+          </div>
+
+          <!-- 有数据 -->
+          <div v-else class="space-y-2">
+            <!-- 综合状态 -->
+            <div :class="['p-3 rounded-xl border', healthSummary?.bg, healthSummary?.border]">
+              <p :class="['font-bold text-sm', healthSummary?.color]">{{ healthSummary?.label }}</p>
+              <p class="text-xs text-slate-400 mt-0.5">
+                最近记录：{{ latestVital.recordTime ? new Date(latestVital.recordTime).toLocaleDateString('zh-CN') : '—' }}
               </p>
+            </div>
+
+            <!-- 体温状态 -->
+            <div v-if="tempStatus" :class="['flex items-center gap-2 p-3 rounded-xl', tempStatus.bg]">
+              <span class="text-base">{{ tempStatus.icon }}</span>
+              <div>
+                <p :class="['text-sm font-bold', tempStatus.color]">{{ tempStatus.label }}</p>
+                <p class="text-xs text-slate-400">{{ latestVital.temperature }}°C（正常范围 38~39.5°C）</p>
+              </div>
+            </div>
+
+            <!-- 体重状态 -->
+            <div v-if="weightStatus" :class="['flex items-center gap-2 p-3 rounded-xl', weightStatus.bg]">
+              <span class="text-base">{{ weightStatus.icon }}</span>
+              <div>
+                <p :class="['text-sm font-bold', weightStatus.color]">{{ weightStatus.label }}</p>
+                <p class="text-xs text-slate-400">共 {{ vitalSigns.length }} 条体征记录</p>
+              </div>
             </div>
           </div>
         </div>
-
+        </div> 
         <!-- 右侧：主人与家庭信息 -->
         <div class="lg:col-span-2 xl:col-span-3 grid grid-cols-1 md:grid-cols-2 gap-6">
           <!-- 主人信息 -->
