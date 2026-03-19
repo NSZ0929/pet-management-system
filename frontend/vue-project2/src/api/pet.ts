@@ -7,6 +7,10 @@ export interface Owner {
   name: string
   contact: string
   address: string
+  environment?: string // 居住环境
+  homeTemperature?: string // 环境气温
+  otherPets?: string // 其他宠物
+  members?: number // 家庭成员数
 }
 
 export interface Pet {
@@ -15,7 +19,7 @@ export interface Pet {
   breed: string
   age: number
   owner: Owner
-  avatar?: string  // ← 新增头像字段
+  avatar?: string // ← 新增头像字段
 }
 
 export interface MedicalRecord {
