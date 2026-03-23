@@ -17,38 +17,41 @@ public class NotificationController {
         this.notificationService = notificationService;
     }
 
-    // 获取某只宠物的所有通知
     // GET /notifications?petId=1
     @GetMapping
     public List<Notification> getByPet(@RequestParam Long petId) {
         return notificationService.getByPet(petId);
     }
 
-    // 获取未读数量
     // GET /notifications/unread-count?petId=1
     @GetMapping("/unread-count")
     public Map<String, Long> countUnread(@RequestParam Long petId) {
         return Map.of("count", notificationService.countUnread(petId));
     }
 
-    // 标记单条为已读
     // PUT /notifications/{id}/read
     @PutMapping("/{id}/read")
     public void markAsRead(@PathVariable Long id) {
         notificationService.markAsRead(id);
     }
 
-    // 标记全部为已读
     // PUT /notifications/read-all?petId=1
     @PutMapping("/read-all")
     public void markAllAsRead(@RequestParam Long petId) {
         notificationService.markAllAsRead(petId);
     }
 
-    // 删除通知
     // DELETE /notifications/{id}
     @DeleteMapping("/{id}")
     public void delete(@PathVariable Long id) {
         notificationService.delete(id);
+    }
+
+    // POST /notifications/trigger-scan
+    // Manually triggers ALL notification scanners at once (appointments + vaccine + medication + feeding)
+    @PostMapping("/trigger-scan")
+    public Map<String, String> triggerScan() {
+        notificationService.triggerAll();
+        return Map.of("status", "All notification scanners triggered successfully");
     }
 }

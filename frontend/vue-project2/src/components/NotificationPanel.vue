@@ -27,6 +27,13 @@ const getPrefs = () => {
   }
 }
 
+// 请求浏览器通知权限（只在 pushNotify 开启时）
+const requestPushPermission = async () => {
+  if ('Notification' in window && Notification.permission === 'default') {
+    await Notification.requestPermission()
+  }
+}
+
 // Filter notifications based on user prefs
 const visibleNotifications = computed(() => {
   const prefs = getPrefs()
@@ -50,6 +57,20 @@ const load = async () => {
       getNotificationsByPet(props.petId),
       getUnreadCount(props.petId),
     ])
+
+    // const prevCount = notifications.value.length
+
+    // ... 原有加载逻辑 ...
+    const newItems = notiRes.data.filter(
+      (n: Notification) => !n.isRead && !notifications.value.find((old) => old.id === n.id)
+    )
+    const prefs = getPrefs()
+    if (prefs.pushNotify !== false && Notification.permission === 'granted') {
+      for (const item of newItems) {
+        new Notification(item.title, { body: item.message, icon: '/favicon.ico' })
+      }
+    }
+
     notifications.value = notiRes.data
     unreadCount.value = countRes.data.count
   } catch (e) {
@@ -108,7 +129,10 @@ const formatDate = (iso: string) =>
     minute: '2-digit',
   })
 
-watch(() => props.petId, load, { immediate: true })
+watch(() => props.petId, async () => {
+  await requestPushPermission()
+  await load()
+}, { immediate: true })
 </script>
 
 <template>
