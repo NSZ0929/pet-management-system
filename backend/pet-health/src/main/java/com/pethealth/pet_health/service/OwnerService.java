@@ -52,6 +52,10 @@ public class OwnerService {
         owner.setName(updatedOwner.getName());
         owner.setContact(updatedOwner.getContact());
         owner.setAddress(updatedOwner.getAddress());
+        owner.setEnvironment(updatedOwner.getEnvironment());
+        owner.setHomeTemperature(updatedOwner.getHomeTemperature());
+        owner.setOtherPets(updatedOwner.getOtherPets());
+        owner.setMembers(updatedOwner.getMembers());
         return ownerRepository.save(owner);
     }
 
