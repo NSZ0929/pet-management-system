@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, reactive, computed } from 'vue'
+import { ref, reactive, computed, watch } from 'vue'
 import {
   User,
   Lock,
@@ -20,9 +20,7 @@ import { changePassword, updateUsername } from '../api/auth'
 
 defineProps<{ headerTitle?: string }>()
 
-const activeSection = ref<'profile' | 'security' | 'notifications' | 'about'>(
-  'profile',
-)
+const activeSection = ref<'profile' | 'security' | 'notifications' | 'about'>('profile')
 
 // ── User Info ──────────────────────────────────────────────
 const storedUser = JSON.parse(localStorage.getItem('user') || '{}')
@@ -45,13 +43,11 @@ const saveProfile = async () => {
   profileSuccess.value = false
   try {
     const res = await updateUsername(profileForm.username.trim())
-    // Update local storage
     username.value = res.data.username
     const user = JSON.parse(localStorage.getItem('user') || '{}')
     user.username = res.data.username
     localStorage.setItem('user', JSON.stringify(user))
     profileSuccess.value = true
-    // Username change requires re-login to refresh token
     setTimeout(() => {
       localStorage.removeItem('token')
       localStorage.removeItem('user')
@@ -117,15 +113,40 @@ const savePassword = async () => {
   }
 }
 
-// ── Notification Settings ──────────────────────────────────────────────
-const notifications = reactive({
-  appointmentReminder: true,
-  vaccinationDue: true,
-  medicationReminder: false,
-  feedingReminder: true,
-  emailNotify: false,
-  pushNotify: true,
-})
+// ── Notification Settings — persisted to localStorage ──────────────
+const loadPrefs = () => {
+  try {
+    const saved = JSON.parse(localStorage.getItem('notificationPrefs') || '{}')
+    return {
+      appointmentReminder: saved.appointmentReminder ?? true,
+      vaccinationDue:      saved.vaccinationDue      ?? true,
+      medicationReminder:  saved.medicationReminder  ?? false,
+      feedingReminder:     saved.feedingReminder      ?? true,
+      emailNotify:         saved.emailNotify          ?? false,
+      pushNotify:          saved.pushNotify           ?? true,
+    }
+  } catch {
+    return {
+      appointmentReminder: true,
+      vaccinationDue: true,
+      medicationReminder: false,
+      feedingReminder: true,
+      emailNotify: false,
+      pushNotify: true,
+    }
+  }
+}
+
+const notifications = reactive(loadPrefs())
+
+// Auto-save to localStorage whenever any toggle changes
+watch(
+  () => ({ ...notifications }),
+  (prefs) => {
+    localStorage.setItem('notificationPrefs', JSON.stringify(prefs))
+  },
+  { deep: true },
+)
 
 // ── About ──────────────────────────────────────────────
 const appInfo = {
@@ -138,10 +159,10 @@ const appInfo = {
 }
 
 const sections = [
-  { key: 'profile', label: 'Profile', icon: User, color: 'text-teal-500', bg: 'bg-teal-50' },
-  { key: 'security', label: 'Security', icon: Lock, color: 'text-amber-500', bg: 'bg-amber-50' },
-  { key: 'notifications', label: 'Notifications', icon: Bell, color: 'text-blue-500', bg: 'bg-blue-50' },
-  { key: 'about', label: 'About', icon: Info, color: 'text-slate-500', bg: 'bg-slate-100' },
+  { key: 'profile',       label: 'Profile',       icon: User,  color: 'text-teal-500',  bg: 'bg-teal-50'  },
+  { key: 'security',      label: 'Security',      icon: Lock,  color: 'text-amber-500', bg: 'bg-amber-50' },
+  { key: 'notifications', label: 'Notifications', icon: Bell,  color: 'text-blue-500',  bg: 'bg-blue-50'  },
+  { key: 'about',         label: 'About',         icon: Info,  color: 'text-slate-500', bg: 'bg-slate-100'},
 ] as const
 </script>
 
@@ -156,10 +177,9 @@ const sections = [
           <span class="text-2xl font-bold text-white">{{ username.charAt(0).toUpperCase() }}</span>
         </div>
         <p class="font-bold text-slate-800">{{ username }}</p>
-        <span
-          class="inline-block mt-1 text-xs font-bold px-2 py-0.5 bg-teal-50 text-teal-600 rounded-full"
-          >{{ userRole }}</span
-        >
+        <span class="inline-block mt-1 text-xs font-bold px-2 py-0.5 bg-teal-50 text-teal-600 rounded-full">
+          {{ userRole }}
+        </span>
       </div>
 
       <div class="bg-white rounded-3xl p-3 shadow-lg border border-slate-100">
@@ -194,6 +214,7 @@ const sections = [
 
     <!-- Right content -->
     <div class="lg:col-span-3">
+
       <!-- Profile -->
       <div
         v-if="activeSection === 'profile'"
@@ -222,26 +243,16 @@ const sections = [
 
         <div class="space-y-2">
           <label class="text-sm font-bold text-slate-600">Account Role</label>
-          <div
-            class="w-full px-4 py-3 rounded-2xl border-2 border-slate-100 bg-slate-50 text-slate-400 font-medium flex items-center gap-2"
-          >
+          <div class="w-full px-4 py-3 rounded-2xl border-2 border-slate-100 bg-slate-50 text-slate-400 font-medium flex items-center gap-2">
             <Shield :size="15" class="text-slate-300" />{{ userRole }}
-            <span class="ml-auto text-xs bg-slate-200 text-slate-500 px-2 py-0.5 rounded-full"
-              >Read-only</span
-            >
+            <span class="ml-auto text-xs bg-slate-200 text-slate-500 px-2 py-0.5 rounded-full">Read-only</span>
           </div>
         </div>
 
-        <div
-          v-if="profileSuccess"
-          class="flex items-center gap-2 text-green-600 bg-green-50 px-4 py-3 rounded-xl text-sm font-medium"
-        >
+        <div v-if="profileSuccess" class="flex items-center gap-2 text-green-600 bg-green-50 px-4 py-3 rounded-xl text-sm font-medium">
           <CheckCircle2 :size="16" /> Username updated successfully!
         </div>
-        <div
-          v-if="profileError"
-          class="flex items-center gap-2 text-red-500 bg-red-50 px-4 py-3 rounded-xl text-sm font-medium"
-        >
+        <div v-if="profileError" class="flex items-center gap-2 text-red-500 bg-red-50 px-4 py-3 rounded-xl text-sm font-medium">
           <AlertCircle :size="16" /> {{ profileError }}
         </div>
 
@@ -251,10 +262,7 @@ const sections = [
           class="px-6 py-2.5 bg-teal-500 hover:bg-teal-600 disabled:bg-teal-300 text-white rounded-xl text-sm font-bold transition-all flex items-center gap-2"
         >
           <Check v-if="!profileSaving" :size="15" />
-          <div
-            v-else
-            class="w-4 h-4 border-2 border-white/50 border-t-white rounded-full animate-spin"
-          />
+          <div v-else class="w-4 h-4 border-2 border-white/50 border-t-white rounded-full animate-spin" />
           {{ profileSaving ? 'Saving...' : 'Save Changes' }}
         </button>
       </div>
@@ -283,10 +291,7 @@ const sections = [
               class="w-full px-4 py-3 pr-11 rounded-2xl border-2 border-slate-100 bg-slate-50 text-slate-800 font-medium focus:outline-none focus:border-amber-400 transition-all"
               placeholder="Enter current password"
             />
-            <button
-              @click="showPasswords.current = !showPasswords.current"
-              class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
-            >
+            <button @click="showPasswords.current = !showPasswords.current" class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
               <Eye v-if="!showPasswords.current" :size="18" /><EyeOff v-else :size="18" />
             </button>
           </div>
@@ -301,10 +306,7 @@ const sections = [
               class="w-full px-4 py-3 pr-11 rounded-2xl border-2 border-slate-100 bg-slate-50 text-slate-800 font-medium focus:outline-none focus:border-amber-400 transition-all"
               placeholder="Enter new password (min. 6 characters)"
             />
-            <button
-              @click="showPasswords.new = !showPasswords.new"
-              class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
-            >
+            <button @click="showPasswords.new = !showPasswords.new" class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
               <Eye v-if="!showPasswords.new" :size="18" /><EyeOff v-else :size="18" />
             </button>
           </div>
@@ -313,10 +315,7 @@ const sections = [
               <div
                 v-for="i in 4"
                 :key="i"
-                :class="[
-                  'h-1.5 flex-1 rounded-full transition-all',
-                  i <= passwordStrength ? strengthColor : 'bg-slate-200',
-                ]"
+                :class="['h-1.5 flex-1 rounded-full transition-all', i <= passwordStrength ? strengthColor : 'bg-slate-200']"
               />
             </div>
             <p class="text-xs" :class="passwordStrength >= 3 ? 'text-green-500' : 'text-slate-400'">
@@ -332,38 +331,22 @@ const sections = [
               v-model="passwordForm.confirm"
               :type="showPasswords.confirm ? 'text' : 'password'"
               class="w-full px-4 py-3 pr-11 rounded-2xl border-2 border-slate-100 bg-slate-50 text-slate-800 font-medium focus:outline-none focus:border-amber-400 transition-all"
-              :class="
-                passwordForm.confirm && passwordForm.confirm !== passwordForm.newPwd
-                  ? 'border-red-300'
-                  : ''
-              "
+              :class="passwordForm.confirm && passwordForm.confirm !== passwordForm.newPwd ? 'border-red-300' : ''"
               placeholder="Re-enter new password"
             />
-            <button
-              @click="showPasswords.confirm = !showPasswords.confirm"
-              class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
-            >
+            <button @click="showPasswords.confirm = !showPasswords.confirm" class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
               <Eye v-if="!showPasswords.confirm" :size="18" /><EyeOff v-else :size="18" />
             </button>
           </div>
-          <p
-            v-if="passwordForm.confirm && passwordForm.confirm !== passwordForm.newPwd"
-            class="text-xs text-red-400"
-          >
+          <p v-if="passwordForm.confirm && passwordForm.confirm !== passwordForm.newPwd" class="text-xs text-red-400">
             Passwords do not match.
           </p>
         </div>
 
-        <div
-          v-if="passwordSuccess"
-          class="flex items-center gap-2 text-green-600 bg-green-50 px-4 py-3 rounded-xl text-sm font-medium"
-        >
+        <div v-if="passwordSuccess" class="flex items-center gap-2 text-green-600 bg-green-50 px-4 py-3 rounded-xl text-sm font-medium">
           <CheckCircle2 :size="16" /> Password changed successfully!
         </div>
-        <div
-          v-if="passwordError"
-          class="flex items-center gap-2 text-red-500 bg-red-50 px-4 py-3 rounded-xl text-sm font-medium"
-        >
+        <div v-if="passwordError" class="flex items-center gap-2 text-red-500 bg-red-50 px-4 py-3 rounded-xl text-sm font-medium">
           <AlertCircle :size="16" /> {{ passwordError }}
         </div>
 
@@ -373,10 +356,7 @@ const sections = [
           class="px-6 py-2.5 bg-amber-500 hover:bg-amber-600 disabled:bg-amber-300 text-white rounded-xl text-sm font-bold transition-all flex items-center gap-2"
         >
           <Lock v-if="!passwordSaving" :size="15" />
-          <div
-            v-else
-            class="w-4 h-4 border-2 border-white/50 border-t-white rounded-full animate-spin"
-          />
+          <div v-else class="w-4 h-4 border-2 border-white/50 border-t-white rounded-full animate-spin" />
           {{ passwordSaving ? 'Changing...' : 'Change Password' }}
         </button>
       </div>
@@ -392,27 +372,19 @@ const sections = [
           </div>
           <div>
             <h2 class="font-bold text-lg text-slate-800">Notification Settings</h2>
-            <p class="text-xs text-slate-400">Manage the types of reminders you want to receive.</p>
+            <p class="text-xs text-slate-400">Preferences are saved automatically and applied to the notification panel.</p>
           </div>
         </div>
+
+        <!-- Pet Reminders -->
         <div class="space-y-2">
           <p class="text-xs font-bold text-slate-400 uppercase tracking-wider">Pet Reminders</p>
           <div
             v-for="item in [
-              {
-                key: 'appointmentReminder',
-                icon: '📅',
-                label: 'Appointment Reminder',
-                desc: 'Reminder 1 day before appointment',
-              },
-              { key: 'vaccinationDue', icon: '💉', label: 'Vaccine Due', desc: 'Reminder 7 days before vaccine expiry' },
-              {
-                key: 'medicationReminder',
-                icon: '💊',
-                label: 'Medication Reminder',
-                desc: 'Daily medication time reminder',
-              },
-              { key: 'feedingReminder', icon: '🍖', label: 'Feeding Reminder', desc: 'Daily feeding time reminder' },
+              { key: 'appointmentReminder', icon: '📅', label: 'Appointment Reminder', desc: 'Show notifications for upcoming appointments' },
+              { key: 'vaccinationDue',      icon: '💉', label: 'Vaccine Due',           desc: 'Show notifications for upcoming vaccines'     },
+              { key: 'medicationReminder',  icon: '💊', label: 'Medication Reminder',   desc: 'Show notifications for daily medications'     },
+              { key: 'feedingReminder',     icon: '🍖', label: 'Feeding Reminder',      desc: 'Show notifications for feeding times'         },
             ]"
             :key="item.key"
             class="flex items-center justify-between p-4 bg-slate-50 rounded-2xl hover:bg-slate-100 transition-colors"
@@ -440,12 +412,14 @@ const sections = [
             </button>
           </div>
         </div>
+
+        <!-- Notification Method -->
         <div class="space-y-2">
           <p class="text-xs font-bold text-slate-400 uppercase tracking-wider">Notification Method</p>
           <div
             v-for="item in [
-              { key: 'pushNotify', icon: Smartphone, label: 'App Push', desc: 'Receive in-app notifications' },
-              { key: 'emailNotify', icon: Mail, label: 'Email Notification', desc: 'Send to registered email address' },
+              { key: 'pushNotify',  icon: Smartphone, label: 'App Push',            desc: 'Receive in-app notifications'         },
+              { key: 'emailNotify', icon: Mail,        label: 'Email Notification',  desc: 'Send to registered email address'     },
             ]"
             :key="item.key"
             class="flex items-center justify-between p-4 bg-slate-50 rounded-2xl hover:bg-slate-100 transition-colors"
@@ -475,33 +449,36 @@ const sections = [
             </button>
           </div>
         </div>
+
+        <!-- Info note -->
+        <div class="flex items-start gap-2 bg-teal-50 border border-teal-100 rounded-xl p-3">
+          <Check :size="14" class="text-teal-500 mt-0.5 flex-shrink-0" />
+          <p class="text-xs text-teal-700 font-medium">
+            Settings are saved to your browser and take effect immediately in the notification panel.
+          </p>
+        </div>
       </div>
 
       <!-- About -->
       <div v-else-if="activeSection === 'about'" class="space-y-4">
         <div class="bg-white rounded-3xl p-7 shadow-lg border border-slate-100">
           <div class="flex items-center gap-4 mb-6">
-            <div
-              class="w-14 h-14 rounded-2xl bg-gradient-to-br from-teal-400 to-cyan-500 flex items-center justify-center shadow-lg shadow-teal-100"
-            >
+            <div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-teal-400 to-cyan-500 flex items-center justify-center shadow-lg shadow-teal-100">
               <span class="text-2xl">🐾</span>
             </div>
             <div>
               <h2 class="font-bold text-xl text-slate-800">{{ appInfo.name }}</h2>
               <p class="text-slate-400 text-sm">{{ appInfo.description }}</p>
-              <span
-                class="inline-block mt-1 text-xs font-bold px-2 py-0.5 bg-teal-50 text-teal-600 rounded-full"
-                >v{{ appInfo.version }}</span
-              >
+              <span class="inline-block mt-1 text-xs font-bold px-2 py-0.5 bg-teal-50 text-teal-600 rounded-full">v{{ appInfo.version }}</span>
             </div>
           </div>
           <div class="space-y-3">
             <div
               v-for="item in [
                 { label: 'Frontend', value: appInfo.frontend },
-                { label: 'Backend', value: appInfo.backend },
-                { label: 'Database', value: appInfo.database },
-                { label: 'Version', value: `v${appInfo.version}` },
+                { label: 'Backend',  value: appInfo.backend  },
+                { label: 'Database', value: appInfo.database  },
+                { label: 'Version',  value: `v${appInfo.version}` },
               ]"
               :key="item.label"
               class="flex items-center justify-between py-2.5 border-b border-slate-50"
@@ -516,16 +493,14 @@ const sections = [
             <Heart :size="16" class="text-red-400" /> Development Team
           </h3>
           <p class="text-sm text-slate-500 leading-relaxed">
-            PetCare
-            is a health management app designed for pet owners — track growth, health, medical records, and daily life.
+            PetCare is a health management app designed for pet owners — track growth, health, medical records, and daily life.
           </p>
           <div class="mt-4 p-3 bg-teal-50 rounded-xl">
-            <p class="text-xs text-teal-600 text-center font-medium">
-              🐾 Caring for every pet with love
-            </p>
+            <p class="text-xs text-teal-600 text-center font-medium">🐾 Caring for every pet with love</p>
           </div>
         </div>
       </div>
+
     </div>
   </div>
 </template>
