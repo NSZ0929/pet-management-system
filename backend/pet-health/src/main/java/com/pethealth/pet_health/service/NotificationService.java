@@ -28,56 +28,58 @@ public class NotificationService {
     }
 
     /**
-     * 每小时执行一次：扫描未来24小时内的预约，生成通知
+     * Runs every hour: scans appointments within the next 24 hours and generates notifications.
      */
     @Scheduled(fixedRate = 3600000)
     public void generateAppointmentNotifications() {
-        logger.info("开始扫描预约提醒...");
+        logger.info("Scanning for upcoming appointment reminders...");
 
         LocalDateTime now = LocalDateTime.now();
         LocalDateTime next24h = now.plusHours(24);
 
-        // 查询所有预约
         List<Appointment> allAppointments = appointmentRepository.findAll();
 
         for (Appointment appt : allAppointments) {
             LocalDateTime apptTime = appt.getAppointmentTime();
 
-            // 只处理未来24小时内的预约
+            // Only process appointments within the next 24 hours
             if (apptTime == null || apptTime.isBefore(now) || apptTime.isAfter(next24h)) {
                 continue;
             }
 
-            // 已经生成过通知的跳过（防止重复）
+            // Skip if a notification has already been generated for this appointment
             if (notificationRepository.existsByAppointmentId(appt.getId())) {
                 continue;
             }
 
-            // 格式化时间
-            String timeStr = apptTime.format(DateTimeFormatter.ofPattern("MM月dd日 HH:mm"));
+            // Format time as e.g. "Mar 23 at 19:00"
+            String timeStr = apptTime.format(DateTimeFormatter.ofPattern("MMM dd 'at' HH:mm"));
 
-            // 生成通知
+            // Build English notification message
+            String message = appt.getPet().getName()
+                    + " has an appointment with Dr. " + appt.getVet().getName()
+                    + " on " + timeStr
+                    + (appt.getDescription() != null ? " — " + appt.getDescription() : "");
+
             Notification notification = new Notification(
                 appt.getPet().getId(),
-                "🐾 预约提醒",
-                appt.getPet().getName() + " 将于 " + timeStr +
-                    " 与 " + appt.getVet().getName() + " 医生进行预约" +
-                    (appt.getDescription() != null ? "：" + appt.getDescription() : ""),
+                "🐾 Appointment Reminder",
+                message,
                 "APPOINTMENT",
                 appt.getId()
             );
 
             notificationRepository.save(notification);
-            logger.info("已生成通知：{}", notification.getMessage());
+            logger.info("Notification generated: {}", notification.getMessage());
         }
     }
 
-    // 获取某只宠物的所有通知
+    // Get all notifications for a pet
     public List<Notification> getByPet(Long petId) {
         return notificationRepository.findByPetIdOrderByCreatedAtDesc(petId);
     }
 
-    // 标记某条通知为已读
+    // Mark a single notification as read
     public void markAsRead(Long id) {
         notificationRepository.findById(id).ifPresent(n -> {
             n.setIsRead(true);
@@ -85,19 +87,19 @@ public class NotificationService {
         });
     }
 
-    // 标记某只宠物的所有通知为已读
+    // Mark all notifications for a pet as read
     public void markAllAsRead(Long petId) {
         List<Notification> list = notificationRepository.findByPetIdOrderByCreatedAtDesc(petId);
         list.forEach(n -> n.setIsRead(true));
         notificationRepository.saveAll(list);
     }
 
-    // 删除通知
+    // Delete a notification
     public void delete(Long id) {
         notificationRepository.deleteById(id);
     }
 
-    // 获取未读数量
+    // Get unread count for a pet
     public long countUnread(Long petId) {
         return notificationRepository.countByPetIdAndIsRead(petId, false);
     }
