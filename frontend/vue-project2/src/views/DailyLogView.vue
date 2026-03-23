@@ -80,7 +80,7 @@ const loadAllLogs = async () => {
     activityLogs.value = a.data
     moodLogs.value = m.data
   } catch {
-    error.value = '加载日志失败，请检查后端连接'
+    error.value = 'Failed to load logs. Please check backend connection.'
   } finally {
     loading.value = false
   }
@@ -103,11 +103,11 @@ const deleteLog = async (id: number, type: DailyLogType) => {
     await deleteDailyLog(id)
     await reloadType(type)
   } catch {
-    error.value = '删除失败'
+    error.value = 'Delete failed.'
   }
 }
 
-// 饮食
+// Feeding
 const showFeedingForm = ref(false)
 const feedingSubmitting = ref(false)
 const newFeeding = ref({
@@ -140,18 +140,18 @@ const addFeeding = async () => {
       note: '',
     }
   } catch {
-    error.value = '添加饮食记录失败'
+    error.value = 'Failed to add feeding record.'
   } finally {
     feedingSubmitting.value = false
   }
 }
 const appetiteLabel: Record<string, { label: string; color: string }> = {
-  great: { label: '胃口极好 Great', color: 'text-emerald-600 bg-emerald-50' },
-  normal: { label: '正常 Normal', color: 'text-blue-600 bg-blue-50' },
-  poor: { label: '食欲不振 Poor', color: 'text-amber-600 bg-amber-50' },
+  great: { label: 'Great Appetite', color: 'text-emerald-600 bg-emerald-50' },
+  normal: { label: 'Normal', color: 'text-blue-600 bg-blue-50' },
+  poor: { label: 'Poor Appetite', color: 'text-amber-600 bg-amber-50' },
 }
 
-// 排泄
+// Excretion
 const showExcretionForm = ref(false)
 const excretionSubmitting = ref(false)
 const newExcretion = ref({
@@ -182,13 +182,13 @@ const addExcretion = async () => {
       note: '',
     }
   } catch {
-    error.value = '添加排泄记录失败'
+    error.value = 'Failed to add excretion record.'
   } finally {
     excretionSubmitting.value = false
   }
 }
 
-// 睡眠
+// Sleep
 const showSleepForm = ref(false)
 const sleepSubmitting = ref(false)
 const newSleep = ref({ date: today, bedtime: '', wakeTime: '', quality: 3, note: '' })
@@ -201,7 +201,7 @@ const addSleep = async () => {
     showSleepForm.value = false
     newSleep.value = { date: today, bedtime: '', wakeTime: '', quality: 3, note: '' }
   } catch {
-    error.value = '添加睡眠记录失败'
+    error.value = 'Failed to add sleep record.'
   } finally {
     sleepSubmitting.value = false
   }
@@ -215,7 +215,7 @@ const sleepDuration = (bedtime: string, wakeTime: string): string => {
 }
 const qualityStars = (q: number) => '★'.repeat(q) + '☆'.repeat(5 - q)
 
-// 运动
+// Activity
 const showActivityForm = ref(false)
 const activitySubmitting = ref(false)
 const newActivity = ref({
@@ -226,7 +226,7 @@ const newActivity = ref({
   behaviors: [] as string[],
   note: '',
 })
-const behaviorOptions = ['抓挠', '过度舔舐', '悲鸣', '颤抖', '攻击性', '食异物']
+const behaviorOptions = ['Scratching', 'Excessive Licking', 'Whimpering', 'Trembling', 'Aggression', 'Pica']
 const toggleBehavior = (b: string) => {
   const idx = newActivity.value.behaviors.indexOf(b)
   if (idx === -1) newActivity.value.behaviors.push(b)
@@ -252,20 +252,20 @@ const addActivity = async () => {
       note: '',
     }
   } catch {
-    error.value = '添加运动记录失败'
+    error.value = 'Failed to add activity record.'
   } finally {
     activitySubmitting.value = false
   }
 }
 const energyLabel: Record<number, string> = {
-  1: '很低',
-  2: '偏低',
-  3: '正常',
-  4: '活跃',
-  5: '极度活跃',
+  1: 'Very Low',
+  2: 'Low',
+  3: 'Normal',
+  4: 'Active',
+  5: 'Very Active',
 }
 
-// 心情
+// Mood
 const showMoodForm = ref(false)
 const moodSubmitting = ref(false)
 const newMood = ref({ date: today, mood: 'neutral', intensity: 2, triggers: '', note: '' })
@@ -278,7 +278,7 @@ const addMood = async () => {
     showMoodForm.value = false
     newMood.value = { date: today, mood: 'neutral', intensity: 2, triggers: '', note: '' }
   } catch {
-    error.value = '添加心情记录失败'
+    error.value = 'Failed to add mood record.'
   } finally {
     moodSubmitting.value = false
   }
@@ -286,31 +286,31 @@ const addMood = async () => {
 const moodConfig: Record<string, { emoji: string; label: string; color: string; bg: string }> = {
   happy: {
     emoji: '😊',
-    label: '开心 Happy',
+    label: 'Happy',
     color: 'text-yellow-600',
     bg: 'bg-yellow-50 border-yellow-200',
   },
   nervous: {
     emoji: '😰',
-    label: '紧张 Nervous',
+    label: 'Nervous',
     color: 'text-purple-600',
     bg: 'bg-purple-50 border-purple-200',
   },
   stressed: {
     emoji: '😖',
-    label: '压力大 Stressed',
+    label: 'Stressed',
     color: 'text-red-600',
     bg: 'bg-red-50 border-red-200',
   },
   low: {
     emoji: '😔',
-    label: '低落 Low mood',
+    label: 'Low Mood',
     color: 'text-slate-600',
     bg: 'bg-slate-50 border-slate-200',
   },
   neutral: {
     emoji: '😐',
-    label: '平静 Neutral',
+    label: 'Calm / Neutral',
     color: 'text-teal-600',
     bg: 'bg-teal-50 border-teal-200',
   },
@@ -342,7 +342,7 @@ const sections = [
       class="text-center py-16 bg-white rounded-3xl shadow-lg border border-slate-100"
     >
       <span class="text-5xl">🐾</span>
-      <p class="font-bold text-slate-600 mt-4">请先在「档案」页面添加宠物</p>
+      <p class="font-bold text-slate-600 mt-4">Please add a pet in the Profile page first.</p>
     </div>
 
     <template v-else>
@@ -352,17 +352,17 @@ const sections = [
       >
         <AlertCircle :size="16" />{{ error }}
         <button @click="loadAllLogs" class="ml-auto flex items-center gap-1 font-bold">
-          <RefreshCw :size="13" /> 重试
+          <RefreshCw :size="13" /> Retry
         </button>
       </div>
 
-      <!-- 页头 -->
+      <!-- Header -->
       <div
         class="bg-gradient-to-r from-teal-500 to-cyan-500 rounded-3xl p-6 text-white shadow-lg shadow-teal-200"
       >
         <div class="flex items-center justify-between">
           <div>
-            <h2 class="text-2xl font-extrabold">🐾 日常记录</h2>
+            <h2 class="text-2xl font-extrabold">🐾 Daily Log</h2>
             <p class="text-teal-100 text-sm mt-1">Daily Life Tracking · {{ today }}</p>
           </div>
           <div class="flex items-center gap-3">
@@ -375,11 +375,11 @@ const sections = [
                 v-else
                 :size="14"
               />
-              刷新
+              Refresh
             </button>
             <div class="text-right">
               <p class="text-3xl font-black">{{ sections.length }}</p>
-              <p class="text-teal-100 text-xs">监测模块</p>
+              <p class="text-teal-100 text-xs">Modules</p>
             </div>
           </div>
         </div>
@@ -398,7 +398,7 @@ const sections = [
         </div>
       </div>
 
-      <!-- 饮食 -->
+      <!-- Feeding -->
       <div class="bg-white rounded-3xl shadow-lg border border-slate-100 overflow-hidden">
         <button
           @click="toggleSection('feeding')"
@@ -409,8 +409,8 @@ const sections = [
               <Utensils :size="20" class="text-teal-600" />
             </div>
             <div class="text-left">
-              <p class="font-bold text-slate-800">饮食记录</p>
-              <p class="text-xs text-slate-400">Feeding Log · 今日 {{ feedingLogs.length }} 条</p>
+              <p class="font-bold text-slate-800">Feeding Log</p>
+              <p class="text-xs text-slate-400">Feeding Log · Today: {{ feedingLogs.length }} entries</p>
             </div>
           </div>
           <component
@@ -428,7 +428,7 @@ const sections = [
             <div class="flex-1 space-y-1">
               <div class="flex items-center gap-2 flex-wrap">
                 <span class="font-semibold text-slate-800">{{
-                  parseData(log).foodType || '未填写食物'
+                  parseData(log).foodType || 'Food not specified'
                 }}</span>
                 <span
                   class="text-xs px-2 py-0.5 rounded-full font-medium"
@@ -460,7 +460,7 @@ const sections = [
           >
             <div class="grid grid-cols-2 gap-3">
               <div>
-                <label class="text-xs font-semibold text-slate-600 mb-1 block">时间</label
+                <label class="text-xs font-semibold text-slate-600 mb-1 block">Time</label
                 ><input
                   type="time"
                   v-model="newFeeding.time"
@@ -468,16 +468,16 @@ const sections = [
                 />
               </div>
               <div>
-                <label class="text-xs font-semibold text-slate-600 mb-1 block">食物种类</label
+                <label class="text-xs font-semibold text-slate-600 mb-1 block">Food Type</label
                 ><input
                   type="text"
                   v-model="newFeeding.foodType"
-                  placeholder="e.g. 皇家成犬粮"
+                  placeholder="e.g. Royal Canin Adult"
                   class="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal-300 bg-white"
                 />
               </div>
               <div>
-                <label class="text-xs font-semibold text-slate-600 mb-1 block">饭量 (g)</label
+                <label class="text-xs font-semibold text-slate-600 mb-1 block">Amount (g)</label
                 ><input
                   type="number"
                   v-model.number="newFeeding.amount"
@@ -485,7 +485,7 @@ const sections = [
                 />
               </div>
               <div>
-                <label class="text-xs font-semibold text-slate-600 mb-1 block">饮水量 (ml)</label
+                <label class="text-xs font-semibold text-slate-600 mb-1 block">Water Intake (ml)</label
                 ><input
                   type="number"
                   v-model.number="newFeeding.water"
@@ -494,7 +494,7 @@ const sections = [
               </div>
             </div>
             <div>
-              <label class="text-xs font-semibold text-slate-600 mb-1 block">胃口</label>
+              <label class="text-xs font-semibold text-slate-600 mb-1 block">Appetite</label>
               <div class="flex gap-2">
                 <button
                   v-for="opt in ['great', 'normal', 'poor']"
@@ -507,16 +507,16 @@ const sections = [
                       : 'border-slate-200 text-slate-600 bg-white'
                   "
                 >
-                  {{ opt === 'great' ? '😋 极好' : opt === 'normal' ? '😊 正常' : '😞 不振' }}
+                  {{ opt === 'great' ? '😋 Great' : opt === 'normal' ? '😊 Normal' : '😞 Poor' }}
                 </button>
               </div>
             </div>
             <div>
-              <label class="text-xs font-semibold text-slate-600 mb-1 block">备注</label
+              <label class="text-xs font-semibold text-slate-600 mb-1 block">Notes</label
               ><input
                 type="text"
                 v-model="newFeeding.note"
-                placeholder="可选备注..."
+                placeholder="Optional notes..."
                 class="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal-300 bg-white"
               />
             </div>
@@ -527,14 +527,14 @@ const sections = [
                 class="flex-1 bg-teal-500 hover:bg-teal-600 disabled:bg-teal-300 text-white font-semibold py-2 rounded-xl text-sm flex items-center justify-center gap-2"
               >
                 <Loader2 v-if="feedingSubmitting" :size="14" class="animate-spin" />{{
-                  feedingSubmitting ? '保存中...' : '✓ 保存'
+                  feedingSubmitting ? 'Saving...' : '✓ Save'
                 }}
               </button>
               <button
                 @click="showFeedingForm = false"
                 class="px-4 py-2 rounded-xl border border-slate-200 text-slate-500 text-sm hover:bg-slate-100"
               >
-                取消
+                Cancel
               </button>
             </div>
           </div>
@@ -543,12 +543,12 @@ const sections = [
             @click="showFeedingForm = true"
             class="w-full flex items-center justify-center gap-2 py-3 border-2 border-dashed border-teal-200 rounded-2xl text-teal-500 hover:bg-teal-50 text-sm font-semibold"
           >
-            <Plus :size="16" /> 添加记录 Add Entry
+            <Plus :size="16" /> Add Entry
           </button>
         </div>
       </div>
 
-      <!-- 排泄 -->
+      <!-- Excretion -->
       <div class="bg-white rounded-3xl shadow-lg border border-slate-100 overflow-hidden">
         <button
           @click="toggleSection('excretion')"
@@ -559,9 +559,9 @@ const sections = [
               <Droplets :size="20" class="text-blue-600" />
             </div>
             <div class="text-left">
-              <p class="font-bold text-slate-800">排泄记录</p>
+              <p class="font-bold text-slate-800">Excretion Log</p>
               <p class="text-xs text-slate-400">
-                Excretion Log · 今日 {{ excretionLogs.length }} 条
+                Excretion Log · Today: {{ excretionLogs.length }} entries
               </p>
             </div>
           </div>
@@ -581,24 +581,24 @@ const sections = [
               <div class="flex items-center gap-2">
                 <span class="text-lg">{{ parseData(log).type === 'urine' ? '💧' : '💩' }}</span>
                 <span class="font-semibold text-slate-800">{{
-                  parseData(log).type === 'urine' ? '小便' : '大便'
+                  parseData(log).type === 'urine' ? 'Urination' : 'Defecation'
                 }}</span>
                 <span
                   v-if="parseData(log).abnormal"
                   class="text-xs px-2 py-0.5 rounded-full bg-red-50 text-red-500 font-medium flex items-center gap-1"
-                  ><AlertCircle :size="10" />异常</span
+                  ><AlertCircle :size="10" />Abnormal</span
                 >
                 <span
                   v-else
                   class="text-xs px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-500 font-medium flex items-center gap-1"
-                  ><CheckCircle2 :size="10" />正常</span
+                  ><CheckCircle2 :size="10" />Normal</span
                 >
               </div>
               <div class="flex gap-4 text-sm text-slate-500">
                 <span class="flex items-center gap-1"
                   ><Clock :size="12" />{{ parseData(log).time }}</span
                 >
-                <span v-if="parseData(log).color">颜色: {{ parseData(log).color }}</span>
+                <span v-if="parseData(log).color">Color: {{ parseData(log).color }}</span>
               </div>
             </div>
             <button
@@ -614,7 +614,7 @@ const sections = [
           >
             <div class="grid grid-cols-2 gap-3">
               <div>
-                <label class="text-xs font-semibold text-slate-600 mb-1 block">时间</label
+                <label class="text-xs font-semibold text-slate-600 mb-1 block">Time</label
                 ><input
                   type="time"
                   v-model="newExcretion.time"
@@ -622,7 +622,7 @@ const sections = [
                 />
               </div>
               <div>
-                <label class="text-xs font-semibold text-slate-600 mb-1 block">类型</label>
+                <label class="text-xs font-semibold text-slate-600 mb-1 block">Type</label>
                 <div class="flex gap-2 h-[38px]">
                   <button
                     @click="newExcretion.type = 'urine'"
@@ -633,7 +633,7 @@ const sections = [
                         : 'border-slate-200 bg-white text-slate-600'
                     "
                   >
-                    💧 小便
+                    💧 Urination
                   </button>
                   <button
                     @click="newExcretion.type = 'defecation'"
@@ -644,16 +644,16 @@ const sections = [
                         : 'border-slate-200 bg-white text-slate-600'
                     "
                   >
-                    💩 大便
+                    💩 Defecation
                   </button>
                 </div>
               </div>
               <div>
-                <label class="text-xs font-semibold text-slate-600 mb-1 block">颜色</label
+                <label class="text-xs font-semibold text-slate-600 mb-1 block">Color</label
                 ><input
                   type="text"
                   v-model="newExcretion.color"
-                  placeholder="e.g. 淡黄色"
+                  placeholder="e.g. light yellow"
                   class="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-300 bg-white"
                 />
               </div>
@@ -670,7 +670,7 @@ const sections = [
                   <component
                     :is="newExcretion.abnormal ? AlertCircle : CheckCircle2"
                     :size="14"
-                  />{{ newExcretion.abnormal ? '异常' : '正常' }}
+                  />{{ newExcretion.abnormal ? 'Abnormal' : 'Normal' }}
                 </button>
               </div>
             </div>
@@ -681,14 +681,14 @@ const sections = [
                 class="flex-1 bg-blue-500 hover:bg-blue-600 disabled:bg-blue-300 text-white font-semibold py-2 rounded-xl text-sm flex items-center justify-center gap-2"
               >
                 <Loader2 v-if="excretionSubmitting" :size="14" class="animate-spin" />{{
-                  excretionSubmitting ? '保存中...' : '✓ 保存'
+                  excretionSubmitting ? 'Saving...' : '✓ Save'
                 }}
               </button>
               <button
                 @click="showExcretionForm = false"
                 class="px-4 py-2 rounded-xl border border-slate-200 text-slate-500 text-sm hover:bg-slate-100"
               >
-                取消
+                Cancel
               </button>
             </div>
           </div>
@@ -697,12 +697,12 @@ const sections = [
             @click="showExcretionForm = true"
             class="w-full flex items-center justify-center gap-2 py-3 border-2 border-dashed border-blue-200 rounded-2xl text-blue-500 hover:bg-blue-50 text-sm font-semibold"
           >
-            <Plus :size="16" /> 添加记录 Add Entry
+            <Plus :size="16" /> Add Entry
           </button>
         </div>
       </div>
 
-      <!-- 睡眠 -->
+      <!-- Sleep -->
       <div class="bg-white rounded-3xl shadow-lg border border-slate-100 overflow-hidden">
         <button
           @click="toggleSection('sleep')"
@@ -713,8 +713,8 @@ const sections = [
               <Moon :size="20" class="text-indigo-600" />
             </div>
             <div class="text-left">
-              <p class="font-bold text-slate-800">睡眠记录</p>
-              <p class="text-xs text-slate-400">Sleep Tracking · 今日 {{ sleepLogs.length }} 条</p>
+              <p class="font-bold text-slate-800">Sleep Log</p>
+              <p class="text-xs text-slate-400">Sleep Tracking · Today: {{ sleepLogs.length }} entries</p>
             </div>
           </div>
           <component
@@ -757,7 +757,7 @@ const sections = [
           >
             <div class="grid grid-cols-2 gap-3">
               <div>
-                <label class="text-xs font-semibold text-slate-600 mb-1 block">入睡时间</label
+                <label class="text-xs font-semibold text-slate-600 mb-1 block">Bedtime</label
                 ><input
                   type="time"
                   v-model="newSleep.bedtime"
@@ -765,7 +765,7 @@ const sections = [
                 />
               </div>
               <div>
-                <label class="text-xs font-semibold text-slate-600 mb-1 block">醒来时间</label
+                <label class="text-xs font-semibold text-slate-600 mb-1 block">Wake Time</label
                 ><input
                   type="time"
                   v-model="newSleep.wakeTime"
@@ -775,7 +775,7 @@ const sections = [
             </div>
             <div>
               <label class="text-xs font-semibold text-slate-600 mb-2 block"
-                >睡眠质量 ({{ newSleep.quality }}/5)</label
+                >Sleep Quality ({{ newSleep.quality }}/5)</label
               ><input
                 type="range"
                 v-model.number="newSleep.quality"
@@ -786,11 +786,11 @@ const sections = [
               />
             </div>
             <div>
-              <label class="text-xs font-semibold text-slate-600 mb-1 block">备注</label
+              <label class="text-xs font-semibold text-slate-600 mb-1 block">Notes</label
               ><input
                 type="text"
                 v-model="newSleep.note"
-                placeholder="可选备注..."
+                placeholder="Optional notes..."
                 class="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-300 bg-white"
               />
             </div>
@@ -801,14 +801,14 @@ const sections = [
                 class="flex-1 bg-indigo-500 hover:bg-indigo-600 disabled:bg-indigo-300 text-white font-semibold py-2 rounded-xl text-sm flex items-center justify-center gap-2"
               >
                 <Loader2 v-if="sleepSubmitting" :size="14" class="animate-spin" />{{
-                  sleepSubmitting ? '保存中...' : '✓ 保存'
+                  sleepSubmitting ? 'Saving...' : '✓ Save'
                 }}
               </button>
               <button
                 @click="showSleepForm = false"
                 class="px-4 py-2 rounded-xl border border-slate-200 text-slate-500 text-sm hover:bg-slate-100"
               >
-                取消
+                Cancel
               </button>
             </div>
           </div>
@@ -817,12 +817,12 @@ const sections = [
             @click="showSleepForm = true"
             class="w-full flex items-center justify-center gap-2 py-3 border-2 border-dashed border-indigo-200 rounded-2xl text-indigo-500 hover:bg-indigo-50 text-sm font-semibold"
           >
-            <Plus :size="16" /> 添加记录 Add Entry
+            <Plus :size="16" /> Add Entry
           </button>
         </div>
       </div>
 
-      <!-- 运动 -->
+      <!-- Activity -->
       <div class="bg-white rounded-3xl shadow-lg border border-slate-100 overflow-hidden">
         <button
           @click="toggleSection('activity')"
@@ -833,9 +833,9 @@ const sections = [
               <Activity :size="20" class="text-amber-600" />
             </div>
             <div class="text-left">
-              <p class="font-bold text-slate-800">运动 / 行为监测</p>
+              <p class="font-bold text-slate-800">Activity & Behavior</p>
               <p class="text-xs text-slate-400">
-                Activity & Behavior · 今日 {{ activityLogs.length }} 条
+                Activity & Behavior · Today: {{ activityLogs.length }} entries
               </p>
             </div>
           </div>
@@ -854,15 +854,15 @@ const sections = [
             <div class="flex-1 space-y-1">
               <div class="flex items-center gap-2 flex-wrap">
                 <span class="font-semibold text-slate-800"
-                  >🏃 {{ parseData(log).type || '未填写活动' }}</span
+                  >🏃 {{ parseData(log).type || 'Activity not specified' }}</span
                 >
                 <span
                   class="text-xs px-2 py-0.5 rounded-full bg-amber-50 text-amber-600 font-medium"
-                  >{{ parseData(log).duration }} 分钟</span
+                  >{{ parseData(log).duration }} min</span
                 >
                 <span
                   class="text-xs px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 font-medium"
-                  >精力: {{ energyLabel[parseData(log).energyLevel] }}</span
+                  >Energy: {{ energyLabel[parseData(log).energyLevel] }}</span
                 >
               </div>
               <p v-if="parseData(log).note" class="text-xs text-slate-400 italic">
@@ -882,16 +882,16 @@ const sections = [
           >
             <div class="grid grid-cols-2 gap-3">
               <div>
-                <label class="text-xs font-semibold text-slate-600 mb-1 block">活动类型</label
+                <label class="text-xs font-semibold text-slate-600 mb-1 block">Activity Type</label
                 ><input
                   type="text"
                   v-model="newActivity.type"
-                  placeholder="e.g. 散步"
+                  placeholder="e.g. Walking"
                   class="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-300 bg-white"
                 />
               </div>
               <div>
-                <label class="text-xs font-semibold text-slate-600 mb-1 block">时长（分钟）</label
+                <label class="text-xs font-semibold text-slate-600 mb-1 block">Duration (min)</label
                 ><input
                   type="number"
                   v-model.number="newActivity.duration"
@@ -901,7 +901,7 @@ const sections = [
             </div>
             <div>
               <label class="text-xs font-semibold text-slate-600 mb-2 block"
-                >精力指数: {{ energyLabel[newActivity.energyLevel] }}</label
+                >Energy Level: {{ energyLabel[newActivity.energyLevel] }}</label
               ><input
                 type="range"
                 v-model.number="newActivity.energyLevel"
@@ -912,7 +912,7 @@ const sections = [
               />
             </div>
             <div>
-              <label class="text-xs font-semibold text-slate-600 mb-2 block">异常行为</label>
+              <label class="text-xs font-semibold text-slate-600 mb-2 block">Abnormal Behaviors</label>
               <div class="flex flex-wrap gap-2">
                 <button
                   v-for="b in behaviorOptions"
@@ -930,11 +930,11 @@ const sections = [
               </div>
             </div>
             <div>
-              <label class="text-xs font-semibold text-slate-600 mb-1 block">备注</label
+              <label class="text-xs font-semibold text-slate-600 mb-1 block">Notes</label
               ><input
                 type="text"
                 v-model="newActivity.note"
-                placeholder="可选备注..."
+                placeholder="Optional notes..."
                 class="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-300 bg-white"
               />
             </div>
@@ -945,14 +945,14 @@ const sections = [
                 class="flex-1 bg-amber-500 hover:bg-amber-600 disabled:bg-amber-300 text-white font-semibold py-2 rounded-xl text-sm flex items-center justify-center gap-2"
               >
                 <Loader2 v-if="activitySubmitting" :size="14" class="animate-spin" />{{
-                  activitySubmitting ? '保存中...' : '✓ 保存'
+                  activitySubmitting ? 'Saving...' : '✓ Save'
                 }}
               </button>
               <button
                 @click="showActivityForm = false"
                 class="px-4 py-2 rounded-xl border border-slate-200 text-slate-500 text-sm hover:bg-slate-100"
               >
-                取消
+                Cancel
               </button>
             </div>
           </div>
@@ -961,12 +961,12 @@ const sections = [
             @click="showActivityForm = true"
             class="w-full flex items-center justify-center gap-2 py-3 border-2 border-dashed border-amber-200 rounded-2xl text-amber-500 hover:bg-amber-50 text-sm font-semibold"
           >
-            <Plus :size="16" /> 添加记录 Add Entry
+            <Plus :size="16" /> Add Entry
           </button>
         </div>
       </div>
 
-      <!-- 心情 -->
+      <!-- Mood -->
       <div class="bg-white rounded-3xl shadow-lg border border-slate-100 overflow-hidden">
         <button
           @click="toggleSection('mood')"
@@ -977,8 +977,8 @@ const sections = [
               <Heart :size="20" class="text-rose-600" />
             </div>
             <div class="text-left">
-              <p class="font-bold text-slate-800">心情情绪</p>
-              <p class="text-xs text-slate-400">Emotional State · 今日 {{ moodLogs.length }} 条</p>
+              <p class="font-bold text-slate-800">Mood & Emotions</p>
+              <p class="text-xs text-slate-400">Emotional State · Today: {{ moodLogs.length }} entries</p>
             </div>
           </div>
           <component
@@ -1000,7 +1000,7 @@ const sections = [
                 <span class="font-semibold" :class="moodConfig[parseData(log).mood]?.color">{{
                   moodConfig[parseData(log).mood]?.label
                 }}</span>
-                <span class="text-xs text-slate-400">强度 {{ parseData(log).intensity }}/3</span>
+                <span class="text-xs text-slate-400">Intensity {{ parseData(log).intensity }}/3</span>
               </div>
               <p v-if="parseData(log).note" class="text-xs text-slate-500 italic">
                 {{ parseData(log).note }}
@@ -1018,7 +1018,7 @@ const sections = [
             class="bg-rose-50 rounded-2xl p-4 space-y-3 border border-rose-100"
           >
             <div>
-              <label class="text-xs font-semibold text-slate-600 mb-2 block">心情</label>
+              <label class="text-xs font-semibold text-slate-600 mb-2 block">Mood</label>
               <div class="grid grid-cols-5 gap-2">
                 <button
                   v-for="(cfg, key) in moodConfig"
@@ -1040,7 +1040,7 @@ const sections = [
             </div>
             <div>
               <label class="text-xs font-semibold text-slate-600 mb-2 block"
-                >强度: {{ newMood.intensity }}/3</label
+                >Intensity: {{ newMood.intensity }}/3</label
               ><input
                 type="range"
                 v-model.number="newMood.intensity"
@@ -1051,11 +1051,11 @@ const sections = [
               />
             </div>
             <div>
-              <label class="text-xs font-semibold text-slate-600 mb-1 block">备注</label
+              <label class="text-xs font-semibold text-slate-600 mb-1 block">Notes</label
               ><input
                 type="text"
                 v-model="newMood.note"
-                placeholder="可选备注..."
+                placeholder="Optional notes..."
                 class="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-rose-300 bg-white"
               />
             </div>
@@ -1066,14 +1066,14 @@ const sections = [
                 class="flex-1 bg-rose-500 hover:bg-rose-600 disabled:bg-rose-300 text-white font-semibold py-2 rounded-xl text-sm flex items-center justify-center gap-2"
               >
                 <Loader2 v-if="moodSubmitting" :size="14" class="animate-spin" />{{
-                  moodSubmitting ? '保存中...' : '✓ 保存'
+                  moodSubmitting ? 'Saving...' : '✓ Save'
                 }}
               </button>
               <button
                 @click="showMoodForm = false"
                 class="px-4 py-2 rounded-xl border border-slate-200 text-slate-500 text-sm hover:bg-slate-100"
               >
-                取消
+                Cancel
               </button>
             </div>
           </div>
@@ -1082,7 +1082,7 @@ const sections = [
             @click="showMoodForm = true"
             class="w-full flex items-center justify-center gap-2 py-3 border-2 border-dashed border-rose-200 rounded-2xl text-rose-500 hover:bg-rose-50 text-sm font-semibold"
           >
-            <Plus :size="16" /> 添加记录 Add Entry
+            <Plus :size="16" /> Add Entry
           </button>
         </div>
       </div>

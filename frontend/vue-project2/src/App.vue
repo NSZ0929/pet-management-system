@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
-// 导入所有需要的视图组件
+// Import all view components
 import DashboardView from './views/DashboardView.vue'
 import PetProfileView from './views/PetProfileView.vue'
 import DailyLogView from './views/DailyLogView.vue'
@@ -23,7 +23,7 @@ import {
   FileText,
 } from 'lucide-vue-next'
 
-// ── 登录状态 ───────────────────────────────────────────────
+// ── Auth state ───────────────────────────────────────────────
 interface AuthUser {
   id: number
   username: string
@@ -45,7 +45,7 @@ const handleLogout = () => {
   isLoggedIn.value = false
 }
 
-// ── 视图状态管理 ───────────────────────────────────────────
+// ── View state management ───────────────────────────────────────────
 type View = 'dashboard' | 'profile' | 'daily' | 'appointment' | 'settings' | 'medical'
 const currentView = ref<View>('dashboard')
 const isSidebarOpen = ref(false)
@@ -55,30 +55,30 @@ const setView = (view: View) => {
   isSidebarOpen.value = false
 }
 
-const headerTitle = ref('宠物健康仪表盘')
+const headerTitle = ref('Pet Health Dashboard')
 
 const updateHeaderTitle = (view: View) => {
   switch (view) {
     case 'dashboard':
-      headerTitle.value = '宠物健康仪表盘'
+      headerTitle.value = 'Pet Health Dashboard'
       break
     case 'profile':
-      headerTitle.value = '宠物档案与主人信息'
+      headerTitle.value = 'Pet Profile & Owner Info'
       break
     case 'settings':
-      headerTitle.value = '用户设置'
+      headerTitle.value = 'Settings'
       break
     case 'daily':
-      headerTitle.value = '日常记录 Daily Log'
+      headerTitle.value = 'Daily Log'
       break
     case 'appointment':
-      headerTitle.value = '预约与通知 Appointment & Reminders'
+      headerTitle.value = 'Appointments & Reminders'
       break
     case 'medical':
-      headerTitle.value = '医疗记录 Medical Records'
+      headerTitle.value = 'Medical Records'
       break
     default:
-      headerTitle.value = '宠物应用'
+      headerTitle.value = 'PetCare'
   }
 }
 
@@ -89,27 +89,27 @@ const handleNavigationClick = (view: View) => {
 
 updateHeaderTitle(currentView.value)
 
-// 导航配置
+// Navigation config
 const navigation = [
-  { name: '仪表盘 Dashboard', icon: Home, view: 'dashboard' as View },
-  { name: '档案 Profile', icon: User, view: 'profile' as View },
-  { name: '日记 Daily Log', icon: ClipboardList, view: 'daily' as View },
-  { name: '预约 Appointment', icon: CalendarDays, view: 'appointment' as View },
-  { name: '病历 Medical', icon: FileText, view: 'medical' as View },
-  { name: '设置 Settings', icon: Settings, view: 'settings' as View },
+  { name: 'Dashboard',    icon: Home,          view: 'dashboard'   as View },
+  { name: 'Profile',      icon: User,          view: 'profile'     as View },
+  { name: 'Daily Log',    icon: ClipboardList, view: 'daily'       as View },
+  { name: 'Appointments', icon: CalendarDays,  view: 'appointment' as View },
+  { name: 'Medical',      icon: FileText,      view: 'medical'     as View },
+  { name: 'Settings',     icon: Settings,      view: 'settings'    as View },
 ]
 
-// 当前宠物 ID（传给通知面板）
+// Current pet ID (for notification panel)
 const currentPetId = computed(() => currentPet.value?.id ?? null)
 </script>
 
 <template>
-  <!-- ── 未登录：显示登录页 ── -->
+  <!-- Not logged in: show login page -->
   <LoginView v-if="!isLoggedIn" @login-success="handleLoginSuccess" />
 
-  <!-- ── 已登录：显示主应用 ── -->
+  <!-- Logged in: show main app -->
   <div v-else class="min-h-screen bg-slate-50 flex">
-    <!-- 侧边栏 -->
+    <!-- Sidebar -->
     <aside
       :class="{ 'translate-x-0': isSidebarOpen, '-translate-x-full': !isSidebarOpen }"
       class="fixed inset-y-0 left-0 z-40 w-64 bg-white shadow-xl lg:relative lg:translate-x-0 lg:flex lg:flex-col p-5 space-y-8 transition-transform duration-300"
@@ -120,7 +120,7 @@ const currentPetId = computed(() => currentPet.value?.id ?? null)
         <PawPrint :size="28" /> PetCare
       </div>
 
-      <!-- 导航链接 -->
+      <!-- Navigation links -->
       <nav class="flex-1 space-y-2">
         <button
           v-for="item in navigation"
@@ -138,27 +138,27 @@ const currentPetId = computed(() => currentPet.value?.id ?? null)
         </button>
       </nav>
 
-      <!-- 底部：用户信息 + 登出 -->
+      <!-- Bottom: user info + logout -->
       <div class="pt-6 border-t border-slate-100 space-y-2">
-        <!-- 当前登录用户 -->
+        <!-- Current user -->
         <div class="px-4 py-2 rounded-xl bg-slate-50">
-          <p class="text-xs text-slate-400">已登录 Logged in as</p>
+          <p class="text-xs text-slate-400">Logged in as</p>
           <p class="text-sm font-bold text-slate-700 truncate">{{ currentUser?.username }}</p>
           <p class="text-xs text-teal-500 font-medium">{{ currentUser?.role }}</p>
         </div>
-        <!-- 登出按钮 -->
+        <!-- Logout button -->
         <button
           @click="handleLogout"
           class="flex items-center gap-3 px-4 py-3 rounded-xl text-red-500 hover:bg-red-50 w-full text-left font-medium transition-all"
         >
-          <LogOut :size="20" /> 登出 Logout
+          <LogOut :size="20" /> Logout
         </button>
       </div>
     </aside>
 
-    <!-- 主内容区 -->
+    <!-- Main content -->
     <div class="flex-1 flex flex-col overflow-hidden">
-      <!-- 顶部 Header -->
+      <!-- Top header -->
       <header
         class="bg-white shadow-sm p-4 lg:p-6 sticky top-0 z-30 flex items-center justify-between"
       >
@@ -172,9 +172,9 @@ const currentPetId = computed(() => currentPet.value?.id ?? null)
           <h1 class="text-2xl font-bold text-slate-800">{{ headerTitle }}</h1>
         </div>
 
-        <!-- 右侧：通知 + 用户头像 -->
+        <!-- Right: notifications + avatar -->
         <div class="flex items-center gap-3">
-          <!-- 通知面板 -->
+          <!-- Notification panel -->
           <NotificationPanel :pet-id="currentPetId" />
 
           <div class="text-right hidden sm:block">
@@ -189,7 +189,7 @@ const currentPetId = computed(() => currentPet.value?.id ?? null)
         </div>
       </header>
 
-      <!-- 视图内容区 -->
+      <!-- View content -->
       <main class="flex-1 overflow-x-hidden overflow-y-auto p-4 lg:p-8">
         <div
           v-if="isSidebarOpen"

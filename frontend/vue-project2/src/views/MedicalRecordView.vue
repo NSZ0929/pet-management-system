@@ -26,13 +26,13 @@ import { currentPet, allPets, loadPets, selectPet } from '../composables/usePetD
 
 defineProps<{ headerTitle?: string }>()
 
-// ── 数据 ──────────────────────────────────────────────────
+// ── Data ──────────────────────────────────────────────────
 const records = ref<MedicalRecord[]>([])
 const diseases = ref<Disease[]>([])
 const loading = ref(false)
 const error = ref('')
 
-// ── 加载 ──────────────────────────────────────────────────
+// ── Load ──────────────────────────────────────────────────
 const loadRecords = async () => {
   if (!currentPet.value?.id) return
   loading.value = true
@@ -41,7 +41,7 @@ const loadRecords = async () => {
     const res = await getMedicalRecordsByPet(currentPet.value.id)
     records.value = res.data
   } catch {
-    error.value = '加载医疗记录失败，请检查后端连接'
+    error.value = 'Failed to load medical records. Check backend connection.'
   } finally {
     loading.value = false
   }
@@ -52,7 +52,7 @@ const loadDiseases = async () => {
     const res = await getAllDiseases()
     diseases.value = res.data
   } catch {
-    console.error('加载疾病列表失败')
+    console.error('Failed to load disease list')
   }
 }
 
@@ -67,7 +67,7 @@ watch(
   () => loadRecords(),
 )
 
-// ── 搜索过滤 ──────────────────────────────────────────────
+// ── Search/Filter ──────────────────────────────────────────────
 const searchKeyword = ref('')
 const filteredRecords = computed(() => {
   if (!searchKeyword.value.trim()) return records.value
@@ -77,7 +77,7 @@ const filteredRecords = computed(() => {
   )
 })
 
-// ── 添加表单 ──────────────────────────────────────────────
+// ── Add Form ──────────────────────────────────────────────
 const showAddForm = ref(false)
 const submitting = ref(false)
 const submitError = ref('')
@@ -116,7 +116,7 @@ const clearDisease = () => {
 const handleAddRecord = async () => {
   if (!currentPet.value?.id) return
   if (!newRecord.value.title.trim()) {
-    submitError.value = '请填写病历标题'
+    submitError.value = 'Please enter a record title.'
     return
   }
   submitting.value = true
@@ -133,29 +133,29 @@ const handleAddRecord = async () => {
     selectedDiseaseId.value = undefined
     diseaseSearch.value = ''
   } catch {
-    submitError.value = '添加失败，请稍后重试'
+    submitError.value = 'Failed to add. Please try again.'
   } finally {
     submitting.value = false
   }
 }
 
-// ── 删除 ──────────────────────────────────────────────────
+// ── Delete ──────────────────────────────────────────────────
 const deletingId = ref<number | null>(null)
 
 const handleDelete = async (id: number) => {
-  if (!confirm('确定要删除这条医疗记录吗？')) return
+  if (!confirm('Are you sure you want to delete this medical record?')) return
   deletingId.value = id
   try {
     await deleteMedicalRecord(id)
     await loadRecords()
   } catch {
-    error.value = '删除失败，请稍后重试'
+    error.value = 'Delete failed. Please try again.'
   } finally {
     deletingId.value = null
   }
 }
 
-// ── 展开详情 ──────────────────────────────────────────────
+// ── Expand Details ──────────────────────────────────────────────
 const expandedId = ref<number | null>(null)
 const toggleExpand = (id: number) => {
   expandedId.value = expandedId.value === id ? null : id
@@ -164,19 +164,19 @@ const toggleExpand = (id: number) => {
 
 <template>
   <div class="space-y-6 max-w-4xl mx-auto">
-    <!-- 无宠物提示 -->
+    <!-- No pet warning -->
     <div
       v-if="!currentPet"
       class="text-center py-20 bg-white rounded-3xl shadow-lg border border-slate-100"
     >
       <span class="text-5xl">🐾</span>
-      <p class="font-bold text-slate-600 mt-4 text-lg">请先在「档案」页面添加宠物</p>
+      <p class="font-bold text-slate-600 mt-4 text-lg">Please add a pet in the Profile page first.</p>
     </div>
 
     <template v-else>
-      <!-- 顶部操作栏 -->
+      <!-- Toolbar -->
       <div class="flex items-center justify-between gap-4 flex-wrap">
-        <!-- 宠物切换 -->
+        <!-- Pet selector -->
         <div class="flex gap-2 flex-wrap" v-if="allPets.length > 1">
           <button
             v-for="pet in allPets"
@@ -193,51 +193,51 @@ const toggleExpand = (id: number) => {
           </button>
         </div>
 
-        <!-- 添加按钮 -->
+        <!-- Add button -->
         <button
           @click="showAddForm = !showAddForm"
           class="flex items-center gap-2 px-4 py-2 bg-teal-500 hover:bg-teal-600 text-white rounded-xl text-sm font-bold shadow-md shadow-teal-100 transition-all ml-auto"
         >
           <component :is="showAddForm ? X : Plus" :size="16" />
-          {{ showAddForm ? '取消' : '添加记录' }}
+          {{ showAddForm ? 'Cancel' : 'Add Record' }}
         </button>
       </div>
 
-      <!-- 错误提示 -->
+      <!-- Error -->
       <div
         v-if="error"
         class="flex items-center gap-3 bg-red-50 border border-red-100 text-red-500 px-5 py-3 rounded-2xl text-sm"
       >
         <AlertCircle :size="16" />{{ error }}
         <button @click="loadRecords" class="ml-auto flex items-center gap-1 font-bold">
-          <RefreshCw :size="13" />重试
+          <RefreshCw :size="13" /> Retry
         </button>
       </div>
 
-      <!-- 添加表单 -->
+      <!-- Add form -->
       <transition name="slide">
         <div
           v-if="showAddForm"
           class="bg-white rounded-3xl p-6 shadow-lg border border-slate-100 space-y-4"
         >
           <h3 class="font-bold text-slate-800 flex items-center gap-2">
-            <FileText :size="18" class="text-teal-500" /> 添加就诊记录
+            <FileText :size="18" class="text-teal-500" /> Add Medical Record
           </h3>
 
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <!-- 左列 -->
+            <!-- Left column -->
             <div class="space-y-3">
               <div>
-                <label class="text-xs font-bold text-slate-500 block mb-1">病历标题 *</label>
+                <label class="text-xs font-bold text-slate-500 block mb-1">Record Title *</label>
                 <input
                   v-model="newRecord.title"
                   type="text"
-                  placeholder="e.g. 年度疫苗接种"
+                  placeholder="e.g. Annual Vaccination"
                   class="w-full px-3 py-2.5 rounded-xl border-2 border-slate-100 bg-slate-50 text-sm font-medium focus:outline-none focus:border-teal-400 transition-all"
                 />
               </div>
               <div>
-                <label class="text-xs font-bold text-slate-500 block mb-1">就诊日期</label>
+                <label class="text-xs font-bold text-slate-500 block mb-1">Visit Date</label>
                 <input
                   v-model="newRecord.visitDate"
                   type="date"
@@ -245,26 +245,26 @@ const toggleExpand = (id: number) => {
                 />
               </div>
               <div>
-                <label class="text-xs font-bold text-slate-500 block mb-1">描述 / 症状</label>
+                <label class="text-xs font-bold text-slate-500 block mb-1">Description / Symptoms</label>
                 <textarea
                   v-model="newRecord.description"
                   rows="3"
-                  placeholder="描述症状、处理方式等..."
+                  placeholder="Describe symptoms, treatment, etc..."
                   class="w-full px-3 py-2.5 rounded-xl border-2 border-slate-100 bg-slate-50 text-sm font-medium focus:outline-none focus:border-teal-400 transition-all resize-none"
                 />
               </div>
             </div>
 
-            <!-- 右列：关联疾病 -->
+            <!-- Right column: linked diseases -->
             <div class="space-y-3">
               <div>
-                <label class="text-xs font-bold text-slate-500 block mb-1">关联疾病（可选）</label>
+                <label class="text-xs font-bold text-slate-500 block mb-1">Linked Diseases (optional)</label>
                 <div class="relative">
                   <div class="flex gap-2">
                     <input
                       v-model="diseaseSearch"
                       type="text"
-                      placeholder="搜索疾病名称..."
+                      placeholder="Search disease name..."
                       @focus="showDiseaseDropdown = true"
                       @input="showDiseaseDropdown = true"
                       class="flex-1 px-3 py-2.5 rounded-xl border-2 border-slate-100 bg-slate-50 text-sm font-medium focus:outline-none focus:border-teal-400 transition-all"
@@ -278,7 +278,7 @@ const toggleExpand = (id: number) => {
                     </button>
                   </div>
 
-                  <!-- 已选疾病 -->
+                  <!-- Selected disease -->
                   <div
                     v-if="selectedDisease && !showDiseaseDropdown"
                     class="mt-2 flex items-center gap-2 bg-teal-50 border border-teal-100 px-3 py-2 rounded-xl"
@@ -290,7 +290,7 @@ const toggleExpand = (id: number) => {
                     }}</span>
                   </div>
 
-                  <!-- 下拉列表 -->
+                  <!-- Dropdown -->
                   <div
                     v-if="showDiseaseDropdown && filteredDiseases.length > 0"
                     class="absolute z-10 w-full mt-1 bg-white border border-slate-100 rounded-2xl shadow-xl max-h-48 overflow-y-auto"
@@ -310,19 +310,19 @@ const toggleExpand = (id: number) => {
                     </div>
                   </div>
 
-                  <!-- 无匹配 -->
+                  <!-- No match -->
                   <div
                     v-if="showDiseaseDropdown && filteredDiseases.length === 0"
                     class="absolute z-10 w-full mt-1 bg-white border border-slate-100 rounded-2xl shadow-xl px-4 py-3 text-sm text-slate-400 text-center"
                   >
-                    暂无匹配的疾病记录
+                    No matching diseases found
                   </div>
                 </div>
               </div>
 
-              <!-- 疾病列表预览 -->
+              <!-- Disease list preview -->
               <div v-if="diseases.length > 0" class="bg-slate-50 rounded-xl p-3">
-                <p class="text-xs font-bold text-slate-400 mb-2">常见疾病</p>
+                <p class="text-xs font-bold text-slate-400 mb-2">Common Diseases</p>
                 <div class="flex flex-wrap gap-1.5">
                   <button
                     v-for="disease in diseases.slice(0, 8)"
@@ -342,7 +342,7 @@ const toggleExpand = (id: number) => {
             </div>
           </div>
 
-          <!-- 错误提示 -->
+          <!-- Submit error -->
           <div
             v-if="submitError"
             class="flex items-center gap-2 text-red-500 bg-red-50 px-4 py-2.5 rounded-xl text-sm"
@@ -357,79 +357,79 @@ const toggleExpand = (id: number) => {
               class="flex-1 py-2.5 bg-teal-500 hover:bg-teal-600 disabled:bg-teal-300 text-white rounded-xl text-sm font-bold transition-all flex items-center justify-center gap-2"
             >
               <Loader2 v-if="submitting" :size="15" class="animate-spin" />
-              {{ submitting ? '提交中...' : '确认添加' }}
+              {{ submitting ? 'Submitting...' : 'Confirm' }}
             </button>
             <button
               @click="showAddForm = false"
               class="px-5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl text-sm font-bold transition-all"
             >
-              取消
+              Cancel
             </button>
           </div>
         </div>
       </transition>
 
-      <!-- 统计卡片 -->
+      <!-- Stats cards -->
       <div class="grid grid-cols-3 gap-4">
         <div class="bg-white rounded-2xl p-4 shadow-md border border-slate-100 text-center">
           <p class="text-2xl font-black text-teal-500">{{ records.length }}</p>
-          <p class="text-xs text-slate-400 mt-1 font-medium">总记录数</p>
+          <p class="text-xs text-slate-400 mt-1 font-medium">Total Records</p>
         </div>
         <div class="bg-white rounded-2xl p-4 shadow-md border border-slate-100 text-center">
           <p class="text-2xl font-black text-blue-500">{{ currentPet?.name }}</p>
-          <p class="text-xs text-slate-400 mt-1 font-medium">当前宠物</p>
+          <p class="text-xs text-slate-400 mt-1 font-medium">Current Pet</p>
         </div>
         <div class="bg-white rounded-2xl p-4 shadow-md border border-slate-100 text-center">
           <p class="text-2xl font-black text-amber-500">{{ records[0]?.visitDate ?? '—' }}</p>
-          <p class="text-xs text-slate-400 mt-1 font-medium">最近就诊</p>
+          <p class="text-xs text-slate-400 mt-1 font-medium">Latest Visit</p>
         </div>
       </div>
 
-      <!-- 搜索栏 -->
+      <!-- Search bar -->
       <div class="relative">
         <Search :size="16" class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
         <input
           v-model="searchKeyword"
           type="text"
-          placeholder="搜索病历标题或描述..."
+          placeholder="Search by title or description..."
           class="w-full pl-10 pr-4 py-3 rounded-2xl border-2 border-slate-100 bg-white text-sm font-medium focus:outline-none focus:border-teal-400 transition-all shadow-sm"
         />
       </div>
 
-      <!-- 加载中 -->
+      <!-- Loading -->
       <div v-if="loading" class="flex justify-center py-12">
         <Loader2 :size="32" class="animate-spin text-teal-400" />
       </div>
 
-      <!-- 空状态 -->
+      <!-- Empty state -->
       <div
         v-else-if="filteredRecords.length === 0"
         class="text-center py-16 bg-white rounded-3xl shadow-lg border border-slate-100"
       >
         <FileText :size="48" class="text-slate-200 mx-auto mb-4" />
         <p class="text-slate-500 font-bold text-lg">
-          {{ searchKeyword ? '没有匹配的记录' : '暂无就诊记录' }}
+          {{ searchKeyword ? 'No matching records' : 'No medical records yet' }}
         </p>
         <p class="text-slate-400 text-sm mt-2">
-          {{ searchKeyword ? '换个关键词试试' : '点击右上角「添加记录」开始记录就诊信息' }}
+          {{ searchKeyword ? 'Try a different keyword' : 'Click "Add Record" to start logging visits' }}
         </p>
       </div>
 
-      <!-- 记录列表 -->
+      <!-- Records list -->
       <div v-else class="space-y-3">
         <div
           v-for="record in filteredRecords"
           :key="record.id"
           class="bg-white rounded-2xl shadow-md border border-slate-100 overflow-hidden transition-all hover:shadow-lg"
         >
-          <!-- 记录头部 -->
+          <!-- Record header -->
           <div class="flex items-center gap-4 p-4 cursor-pointer" @click="toggleExpand(record.id)">
             <div class="w-10 h-10 rounded-xl bg-teal-50 flex items-center justify-center shrink-0">
               <FileText :size="18" class="text-teal-500" />
             </div>
             <div class="flex-1 min-w-0">
               <p class="font-bold text-slate-800 truncate">{{ record.title }}</p>
-              <p class="text-xs text-slate-400 mt-0.5">📅 {{ record.visitDate ?? '日期未记录' }}</p>
+              <p class="text-xs text-slate-400 mt-0.5">📅 {{ record.visitDate ?? 'Date not recorded' }}</p>
             </div>
             <div class="flex items-center gap-2 shrink-0">
               <button
@@ -448,14 +448,14 @@ const toggleExpand = (id: number) => {
             </div>
           </div>
 
-          <!-- 展开详情 -->
+          <!-- Expanded details -->
           <div v-if="expandedId === record.id" class="px-4 pb-4 border-t border-slate-50">
             <div class="mt-3 space-y-2">
               <div v-if="record.description" class="bg-slate-50 rounded-xl p-3">
-                <p class="text-xs font-bold text-slate-400 mb-1">描述 / 症状</p>
+                <p class="text-xs font-bold text-slate-400 mb-1">Description / Symptoms</p>
                 <p class="text-sm text-slate-600 leading-relaxed">{{ record.description }}</p>
               </div>
-              <div v-else class="text-xs text-slate-400 italic text-center py-2">暂无描述</div>
+              <div v-else class="text-xs text-slate-400 italic text-center py-2">No description available.</div>
             </div>
           </div>
         </div>

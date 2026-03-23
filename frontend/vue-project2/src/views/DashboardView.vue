@@ -33,7 +33,7 @@ onMounted(() => {
 const recentRecords = computed(() => medicalRecords.value)
 const currentYear = new Date().getFullYear()
 
-// ── 生命体征 ──────────────────────────────────────────────
+// ── Vital Signs ──────────────────────────────────────────────
 const vitalSigns = ref<VitalSign[]>([])
 const vitalLoading = ref(false)
 const showVitalForm = ref(false)
@@ -51,7 +51,7 @@ const loadVitalSigns = async () => {
       (a, b) => new Date(b.recordTime ?? 0).getTime() - new Date(a.recordTime ?? 0).getTime(),
     )
   } catch {
-    console.error('加载生命体征失败')
+    console.error('Failed to load vital signs')
   } finally {
     vitalLoading.value = false
   }
@@ -71,7 +71,7 @@ const submitVitalSign = async () => {
     showVitalForm.value = false
     newVital.value = { temperature: '', weight: '' }
   } catch {
-    console.error('添加生命体征失败')
+    console.error('Failed to add vital sign')
   } finally {
     vitalSubmitting.value = false
   }
@@ -83,7 +83,7 @@ const handleDeleteVital = async (id: number) => {
     await deleteVitalSign(id)
     await loadVitalSigns()
   } catch {
-    console.error('删除失败')
+    console.error('Delete failed')
   } finally {
     deletingVitalId.value = null
   }
@@ -105,7 +105,7 @@ watch(
       class="flex items-center justify-center py-20 gap-3 text-slate-400"
     >
       <Loader2 :size="24" class="animate-spin text-teal-500" />
-      <span class="text-sm font-medium">正在加载宠物数据...</span>
+      <span class="text-sm font-medium">Loading pet data...</span>
     </div>
 
     <div
@@ -121,19 +121,19 @@ watch(
       class="text-center py-20 bg-white rounded-3xl shadow-lg border border-slate-100"
     >
       <PawPrint :size="48" class="text-slate-200 mx-auto mb-4" />
-      <p class="text-slate-500 font-bold text-lg">还没有宠物档案</p>
-      <p class="text-slate-400 text-sm mt-2">请先在「档案 Profile」页面添加你的宠物 🐾</p>
+      <p class="text-slate-500 font-bold text-lg">No pet profiles yet</p>
+      <p class="text-slate-400 text-sm mt-2">Please add your pet in the Profile page first. 🐾</p>
     </div>
 
     <div v-else class="grid grid-cols-1 lg:grid-cols-3 gap-6 items-stretch">
-      <!-- 左侧列 -->
+      <!-- Left column -->
       <div class="lg:col-span-1 flex flex-col gap-6">
         <div
           v-if="allPets.length > 1"
           class="bg-white rounded-2xl p-4 shadow-md border border-slate-100"
         >
           <label class="block text-xs font-bold text-slate-400 mb-2 uppercase tracking-wider"
-            >选择宠物</label
+            >Select Pet</label
           >
           <div class="relative">
             <select
@@ -168,31 +168,31 @@ watch(
             </div>
             <div class="flex items-center justify-between bg-slate-50 p-3 rounded-xl">
               <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">Breed</span>
-              <span class="font-bold text-slate-700">{{ currentPet?.breed || '暂未填写' }}</span>
+              <span class="font-bold text-slate-700">{{ currentPet?.breed || 'Not set' }}</span>
             </div>
             <div class="flex items-center justify-between bg-slate-50 p-3 rounded-xl">
               <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">Age</span>
               <span class="font-bold text-slate-700">{{
-                currentPet?.age != null ? `${currentPet.age} 岁` : '暂未填写'
+                currentPet?.age != null ? `${currentPet.age} yr` : 'Not set'
               }}</span>
             </div>
             <div class="flex items-center justify-between bg-slate-50 p-3 rounded-xl">
               <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">Owner</span>
               <span class="font-bold text-slate-700">{{
-                currentPet?.owner?.name || '暂未填写'
+                currentPet?.owner?.name || 'Not set'
               }}</span>
             </div>
           </div>
         </div>
       </div>
 
-      <!-- 右侧区域 -->
+      <!-- Right column -->
       <div class="lg:col-span-2 space-y-6">
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6 items-stretch">
-          <!-- 生命体征 -->
+          <!-- Vital Signs -->
           <div class="bg-white rounded-3xl p-6 shadow-lg border border-slate-100 flex flex-col">
             <div class="flex items-center justify-between mb-4">
-              <h3 class="font-bold text-slate-800">生命体征 Vital Signs</h3>
+              <h3 class="font-bold text-slate-800">Vital Signs</h3>
               <button
                 @click="showVitalForm = !showVitalForm"
                 class="flex items-center gap-1 text-xs font-bold px-3 py-1.5 rounded-xl transition-all"
@@ -203,15 +203,15 @@ watch(
                 "
               >
                 <component :is="showVitalForm ? X : Plus" :size="13" />
-                {{ showVitalForm ? '取消' : '记录' }}
+                {{ showVitalForm ? 'Cancel' : 'Record' }}
               </button>
             </div>
 
-            <!-- 添加表单 -->
+            <!-- Add form -->
             <div v-if="showVitalForm" class="mb-4 p-3 bg-slate-50 rounded-xl space-y-3">
               <div class="grid grid-cols-2 gap-2">
                 <div>
-                  <label class="text-xs font-bold text-slate-400 block mb-1">体温 (°C)</label>
+                  <label class="text-xs font-bold text-slate-400 block mb-1">Temperature (°C)</label>
                   <input
                     v-model="newVital.temperature"
                     type="number"
@@ -221,7 +221,7 @@ watch(
                   />
                 </div>
                 <div>
-                  <label class="text-xs font-bold text-slate-400 block mb-1">体重 (kg)</label>
+                  <label class="text-xs font-bold text-slate-400 block mb-1">Weight (kg)</label>
                   <input
                     v-model="newVital.weight"
                     type="number"
@@ -237,11 +237,11 @@ watch(
                 class="w-full py-2 bg-teal-500 hover:bg-teal-600 disabled:bg-teal-300 text-white rounded-xl text-sm font-bold transition-all flex items-center justify-center gap-2"
               >
                 <Loader2 v-if="vitalSubmitting" :size="13" class="animate-spin" />
-                {{ vitalSubmitting ? '保存中...' : '✓ 保存记录' }}
+                {{ vitalSubmitting ? 'Saving...' : '✓ Save' }}
               </button>
             </div>
 
-            <!-- 最新数据 -->
+            <!-- Latest data -->
             <div v-if="vitalLoading" class="flex justify-center py-4">
               <Loader2 :size="20" class="animate-spin text-teal-400" />
             </div>
@@ -251,11 +251,11 @@ watch(
                   <Thermometer :size="18" class="text-red-400" />
                 </div>
                 <div>
-                  <p class="text-xs text-slate-400 font-bold uppercase">体温 Temperature</p>
+                  <p class="text-xs text-slate-400 font-bold uppercase">Temperature</p>
                   <p v-if="latestVital?.temperature" class="text-base font-bold text-slate-700">
                     {{ latestVital.temperature }} °C
                   </p>
-                  <p v-else class="text-base font-bold text-slate-400 italic">暂未记录</p>
+                  <p v-else class="text-base font-bold text-slate-400 italic">No data yet</p>
                 </div>
               </div>
               <div class="flex items-center gap-3">
@@ -263,18 +263,18 @@ watch(
                   <Scale :size="18" class="text-blue-400" />
                 </div>
                 <div>
-                  <p class="text-xs text-slate-400 font-bold uppercase">体重 Weight</p>
+                  <p class="text-xs text-slate-400 font-bold uppercase">Weight</p>
                   <p v-if="latestVital?.weight" class="text-base font-bold text-slate-700">
                     {{ latestVital.weight }} kg
                   </p>
-                  <p v-else class="text-base font-bold text-slate-400 italic">暂未记录</p>
+                  <p v-else class="text-base font-bold text-slate-400 italic">No data yet</p>
                 </div>
               </div>
             </div>
 
-            <!-- 历史记录：固定高度 + 滚动 + 删除按钮 -->
+            <!-- History: fixed height + scroll + delete -->
             <div v-if="vitalSigns.length > 0" class="mt-4">
-              <p class="text-xs font-bold text-slate-400 mb-2">所有记录</p>
+              <p class="text-xs font-bold text-slate-400 mb-2">All Records</p>
               <div class="h-28 overflow-y-auto space-y-1 pr-1">
                 <div
                   v-for="vs in vitalSigns"
@@ -297,13 +297,13 @@ watch(
                 </div>
               </div>
             </div>
-            <p class="mt-2 text-xs text-slate-400 text-center">共 {{ vitalSigns.length }} 条记录</p>
+            <p class="mt-2 text-xs text-slate-400 text-center">{{ vitalSigns.length }} records total</p>
           </div>
 
-          <!-- 就诊记录 -->
+          <!-- Medical Records -->
           <div class="bg-white rounded-3xl p-6 shadow-lg border border-slate-100 flex flex-col">
             <h3 class="font-bold text-slate-800 mb-4 flex items-center justify-between">
-              就诊记录 Medical Records
+              Medical Records
               <span class="text-xs bg-slate-100 text-slate-500 px-2 py-1 rounded-lg">{{
                 currentYear
               }}</span>
@@ -314,10 +314,10 @@ watch(
               class="flex-1 flex flex-col items-center justify-center py-6"
             >
               <FileText :size="32" class="text-slate-200 mb-2" />
-              <p class="text-sm text-slate-400">暂无就诊记录</p>
+              <p class="text-sm text-slate-400">No medical records yet.</p>
             </div>
 
-            <!-- 就诊记录滚动列表 -->
+            <!-- Medical record scroll list -->
             <div v-else class="h-52 overflow-y-auto space-y-2 pr-1">
               <div
                 v-for="record in recentRecords"
@@ -336,16 +336,16 @@ watch(
               @click="emit('navigate', 'medical')"
               class="w-full mt-4 py-2.5 bg-teal-500 hover:bg-teal-600 text-white rounded-xl text-sm font-bold shadow-md shadow-teal-100 transition-all flex items-center justify-center gap-2"
             >
-              <FileText :size="15" /> 查看完整报告
+              <FileText :size="15" /> View Full Report
             </button>
           </div>
         </div>
 
-        <!-- 快速入口 -->
+        <!-- Quick Access -->
         <div class="bg-white rounded-3xl p-6 shadow-lg border border-slate-100">
           <h3 class="font-bold text-slate-800 mb-5 flex items-center gap-2">
             <Activity :size="18" class="text-teal-500" />
-            快速入口 Quick Access
+            Quick Access
           </h3>
           <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
             <div
@@ -353,54 +353,54 @@ watch(
               class="flex flex-col items-center gap-2 p-4 bg-teal-50 rounded-2xl hover:bg-teal-100 transition-colors cursor-pointer"
             >
               <span class="text-2xl">💉</span>
-              <span class="text-xs font-bold text-teal-700 text-center">疫苗记录</span>
+              <span class="text-xs font-bold text-teal-700 text-center">Vaccines</span>
             </div>
             <div
               @click="emit('navigate', 'appointment')"
               class="flex flex-col items-center gap-2 p-4 bg-blue-50 rounded-2xl hover:bg-blue-100 transition-colors cursor-pointer"
             >
               <span class="text-2xl">💊</span>
-              <span class="text-xs font-bold text-blue-700 text-center">用药管理</span>
+              <span class="text-xs font-bold text-blue-700 text-center">Medications</span>
             </div>
             <div
               @click="emit('navigate', 'daily')"
               class="flex flex-col items-center gap-2 p-4 bg-amber-50 rounded-2xl hover:bg-amber-100 transition-colors cursor-pointer"
             >
               <span class="text-2xl">🍖</span>
-              <span class="text-xs font-bold text-amber-700 text-center">饮食记录</span>
+              <span class="text-xs font-bold text-amber-700 text-center">Feeding Log</span>
             </div>
             <div
               @click="emit('navigate', 'medical')"
               class="flex flex-col items-center gap-2 p-4 bg-purple-50 rounded-2xl hover:bg-purple-100 transition-colors cursor-pointer"
             >
               <span class="text-2xl">📋</span>
-              <span class="text-xs font-bold text-purple-700 text-center">医疗记录</span>
+              <span class="text-xs font-bold text-purple-700 text-center">Medical Records</span>
             </div>
           </div>
         </div>
 
-        <!-- 主人信息摘要 -->
+        <!-- Owner Summary -->
         <div class="bg-white rounded-3xl p-6 shadow-lg border border-slate-100">
-          <h3 class="font-bold text-slate-800 mb-4">主人信息摘要 Owner Summary</h3>
+          <h3 class="font-bold text-slate-800 mb-4">Owner Summary</h3>
           <div v-if="currentPet?.owner" class="grid grid-cols-1 md:grid-cols-3 gap-3">
             <div class="bg-slate-50 p-3 rounded-xl">
-              <p class="text-xs text-slate-400 font-bold uppercase mb-1">姓名</p>
+              <p class="text-xs text-slate-400 font-bold uppercase mb-1">Name</p>
               <p class="text-sm font-bold text-slate-700">{{ currentPet.owner.name }}</p>
             </div>
             <div class="bg-slate-50 p-3 rounded-xl">
-              <p class="text-xs text-slate-400 font-bold uppercase mb-1">联系方式</p>
+              <p class="text-xs text-slate-400 font-bold uppercase mb-1">Contact</p>
               <p class="text-sm font-bold text-slate-700">
-                {{ currentPet.owner.contact || '暂未填写' }}
+                {{ currentPet.owner.contact || 'Not set' }}
               </p>
             </div>
             <div class="bg-slate-50 p-3 rounded-xl">
-              <p class="text-xs text-slate-400 font-bold uppercase mb-1">地址</p>
+              <p class="text-xs text-slate-400 font-bold uppercase mb-1">Address</p>
               <p class="text-sm font-bold text-slate-700 truncate">
-                {{ currentPet.owner.address || '暂未填写' }}
+                {{ currentPet.owner.address || 'Not set' }}
               </p>
             </div>
           </div>
-          <div v-else class="text-center py-4 text-slate-400 text-sm">暂无主人信息</div>
+          <div v-else class="text-center py-4 text-slate-400 text-sm">No owner info available.</div>
         </div>
       </div>
     </div>

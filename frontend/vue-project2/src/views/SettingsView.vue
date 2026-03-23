@@ -24,12 +24,12 @@ const activeSection = ref<'profile' | 'security' | 'notifications' | 'about'>(
   'profile',
 )
 
-// ── 用户信息 ──────────────────────────────────────────────
+// ── User Info ──────────────────────────────────────────────
 const storedUser = JSON.parse(localStorage.getItem('user') || '{}')
-const username = ref(storedUser.username || '未知用户')
+const username = ref(storedUser.username || 'Unknown User')
 const userRole = ref(storedUser.role || 'USER')
 
-// ── 个人信息 ──────────────────────────────────────────────
+// ── Profile ──────────────────────────────────────────────
 const profileForm = reactive({ username: username.value })
 const profileSaving = ref(false)
 const profileSuccess = ref(false)
@@ -37,7 +37,7 @@ const profileError = ref('')
 
 const saveProfile = async () => {
   if (!profileForm.username.trim()) {
-    profileError.value = '用户名不能为空'
+    profileError.value = 'Username cannot be empty.'
     return
   }
   profileSaving.value = true
@@ -45,13 +45,13 @@ const saveProfile = async () => {
   profileSuccess.value = false
   try {
     const res = await updateUsername(profileForm.username.trim())
-    // 更新本地存储
+    // Update local storage
     username.value = res.data.username
     const user = JSON.parse(localStorage.getItem('user') || '{}')
     user.username = res.data.username
     localStorage.setItem('user', JSON.stringify(user))
     profileSuccess.value = true
-    // 用户名修改后需要重新登录获取新Token
+    // Username change requires re-login to refresh token
     setTimeout(() => {
       localStorage.removeItem('token')
       localStorage.removeItem('user')
@@ -59,13 +59,13 @@ const saveProfile = async () => {
     }, 2000)
   } catch (err) {
     profileError.value =
-      (err as { response?: { data?: string } })?.response?.data || '保存失败，请稍后重试'
+      (err as { response?: { data?: string } })?.response?.data || 'Save failed. Please try again.'
   } finally {
     profileSaving.value = false
   }
 }
 
-// ── 密码修改 ──────────────────────────────────────────────
+// ── Change Password ──────────────────────────────────────────────
 const passwordForm = reactive({ current: '', newPwd: '', confirm: '' })
 const showPasswords = reactive({ current: false, new: false, confirm: false })
 const passwordSaving = ref(false)
@@ -82,7 +82,7 @@ const passwordStrength = computed(() => {
   if (/[^A-Za-z0-9]/.test(p)) score++
   return score
 })
-const strengthLabel = computed(() => ['', '弱', '一般', '较强', '强'][passwordStrength.value])
+const strengthLabel = computed(() => ['', 'Weak', 'Fair', 'Strong', 'Very Strong'][passwordStrength.value])
 const strengthColor = computed(
   () => ['', 'bg-red-400', 'bg-amber-400', 'bg-teal-400', 'bg-green-500'][passwordStrength.value],
 )
@@ -90,15 +90,15 @@ const strengthColor = computed(
 const savePassword = async () => {
   passwordError.value = ''
   if (!passwordForm.current || !passwordForm.newPwd || !passwordForm.confirm) {
-    passwordError.value = '请填写所有密码字段'
+    passwordError.value = 'Please fill in all password fields.'
     return
   }
   if (passwordForm.newPwd !== passwordForm.confirm) {
-    passwordError.value = '两次输入的新密码不一致'
+    passwordError.value = 'New passwords do not match.'
     return
   }
   if (passwordForm.newPwd.length < 6) {
-    passwordError.value = '新密码至少需要6位'
+    passwordError.value = 'New password must be at least 6 characters.'
     return
   }
   passwordSaving.value = true
@@ -111,13 +111,13 @@ const savePassword = async () => {
     setTimeout(() => (passwordSuccess.value = false), 3000)
   } catch (err) {
     passwordError.value =
-      (err as { response?: { data?: string } })?.response?.data || '保存失败，请稍后重试'
+      (err as { response?: { data?: string } })?.response?.data || 'Save failed. Please try again.'
   } finally {
     passwordSaving.value = false
   }
 }
 
-// ── 通知设置 ──────────────────────────────────────────────
+// ── Notification Settings ──────────────────────────────────────────────
 const notifications = reactive({
   appointmentReminder: true,
   vaccinationDue: true,
@@ -127,27 +127,27 @@ const notifications = reactive({
   pushNotify: true,
 })
 
-// ── 关于应用 ──────────────────────────────────────────────
+// ── About ──────────────────────────────────────────────
 const appInfo = {
   name: 'PetCare',
   version: '1.0.0',
-  description: '专业宠物健康管理系统',
+  description: 'Professional Pet Health Management System',
   backend: 'Spring Boot 3.5.9',
   frontend: 'Vue 3 + TypeScript',
   database: 'MySQL 8.4',
 }
 
 const sections = [
-  { key: 'profile', label: '个人信息', icon: User, color: 'text-teal-500', bg: 'bg-teal-50' },
-  { key: 'security', label: '账号安全', icon: Lock, color: 'text-amber-500', bg: 'bg-amber-50' },
-  { key: 'notifications', label: '通知设置', icon: Bell, color: 'text-blue-500', bg: 'bg-blue-50' },
-  { key: 'about', label: '关于应用', icon: Info, color: 'text-slate-500', bg: 'bg-slate-100' },
+  { key: 'profile', label: 'Profile', icon: User, color: 'text-teal-500', bg: 'bg-teal-50' },
+  { key: 'security', label: 'Security', icon: Lock, color: 'text-amber-500', bg: 'bg-amber-50' },
+  { key: 'notifications', label: 'Notifications', icon: Bell, color: 'text-blue-500', bg: 'bg-blue-50' },
+  { key: 'about', label: 'About', icon: Info, color: 'text-slate-500', bg: 'bg-slate-100' },
 ] as const
 </script>
 
 <template>
   <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
-    <!-- 左侧导航 -->
+    <!-- Left sidebar -->
     <div class="lg:col-span-1 space-y-3">
       <div class="bg-white rounded-3xl p-5 shadow-lg border border-slate-100 text-center">
         <div
@@ -192,9 +192,9 @@ const sections = [
       </div>
     </div>
 
-    <!-- 右侧内容 -->
+    <!-- Right content -->
     <div class="lg:col-span-3">
-      <!-- 个人信息 -->
+      <!-- Profile -->
       <div
         v-if="activeSection === 'profile'"
         class="bg-white rounded-3xl p-7 shadow-lg border border-slate-100 space-y-6"
@@ -204,30 +204,30 @@ const sections = [
             <User :size="18" class="text-teal-500" />
           </div>
           <div>
-            <h2 class="font-bold text-lg text-slate-800">个人信息</h2>
-            <p class="text-xs text-slate-400">修改用户名，实时同步到后端</p>
+            <h2 class="font-bold text-lg text-slate-800">Profile</h2>
+            <p class="text-xs text-slate-400">Update your username — synced to backend in real time.</p>
           </div>
         </div>
 
         <div class="space-y-2">
-          <label class="text-sm font-bold text-slate-600">用户名 Username</label>
+          <label class="text-sm font-bold text-slate-600">Username</label>
           <input
             v-model="profileForm.username"
             type="text"
             class="w-full px-4 py-3 rounded-2xl border-2 border-slate-100 bg-slate-50 text-slate-800 font-medium focus:outline-none focus:border-teal-400 transition-all"
-            placeholder="输入新用户名"
+            placeholder="Enter new username"
           />
-          <p class="text-xs text-slate-400">修改后需要重新登录才能完全生效</p>
+          <p class="text-xs text-slate-400">You will need to log in again after changing your username.</p>
         </div>
 
         <div class="space-y-2">
-          <label class="text-sm font-bold text-slate-600">账户角色 Role</label>
+          <label class="text-sm font-bold text-slate-600">Account Role</label>
           <div
             class="w-full px-4 py-3 rounded-2xl border-2 border-slate-100 bg-slate-50 text-slate-400 font-medium flex items-center gap-2"
           >
             <Shield :size="15" class="text-slate-300" />{{ userRole }}
             <span class="ml-auto text-xs bg-slate-200 text-slate-500 px-2 py-0.5 rounded-full"
-              >只读</span
+              >Read-only</span
             >
           </div>
         </div>
@@ -236,7 +236,7 @@ const sections = [
           v-if="profileSuccess"
           class="flex items-center gap-2 text-green-600 bg-green-50 px-4 py-3 rounded-xl text-sm font-medium"
         >
-          <CheckCircle2 :size="16" /> 用户名修改成功！
+          <CheckCircle2 :size="16" /> Username updated successfully!
         </div>
         <div
           v-if="profileError"
@@ -255,11 +255,11 @@ const sections = [
             v-else
             class="w-4 h-4 border-2 border-white/50 border-t-white rounded-full animate-spin"
           />
-          {{ profileSaving ? '保存中...' : '保存修改' }}
+          {{ profileSaving ? 'Saving...' : 'Save Changes' }}
         </button>
       </div>
 
-      <!-- 账号安全 -->
+      <!-- Security -->
       <div
         v-else-if="activeSection === 'security'"
         class="bg-white rounded-3xl p-7 shadow-lg border border-slate-100 space-y-6"
@@ -269,19 +269,19 @@ const sections = [
             <Lock :size="18" class="text-amber-500" />
           </div>
           <div>
-            <h2 class="font-bold text-lg text-slate-800">账号安全</h2>
-            <p class="text-xs text-slate-400">修改密码，直接对接后端验证</p>
+            <h2 class="font-bold text-lg text-slate-800">Account Security</h2>
+            <p class="text-xs text-slate-400">Change your password — verified by backend.</p>
           </div>
         </div>
 
         <div class="space-y-2">
-          <label class="text-sm font-bold text-slate-600">当前密码</label>
+          <label class="text-sm font-bold text-slate-600">Current Password</label>
           <div class="relative">
             <input
               v-model="passwordForm.current"
               :type="showPasswords.current ? 'text' : 'password'"
               class="w-full px-4 py-3 pr-11 rounded-2xl border-2 border-slate-100 bg-slate-50 text-slate-800 font-medium focus:outline-none focus:border-amber-400 transition-all"
-              placeholder="输入当前密码"
+              placeholder="Enter current password"
             />
             <button
               @click="showPasswords.current = !showPasswords.current"
@@ -293,13 +293,13 @@ const sections = [
         </div>
 
         <div class="space-y-2">
-          <label class="text-sm font-bold text-slate-600">新密码</label>
+          <label class="text-sm font-bold text-slate-600">New Password</label>
           <div class="relative">
             <input
               v-model="passwordForm.newPwd"
               :type="showPasswords.new ? 'text' : 'password'"
               class="w-full px-4 py-3 pr-11 rounded-2xl border-2 border-slate-100 bg-slate-50 text-slate-800 font-medium focus:outline-none focus:border-amber-400 transition-all"
-              placeholder="输入新密码（至少6位）"
+              placeholder="Enter new password (min. 6 characters)"
             />
             <button
               @click="showPasswords.new = !showPasswords.new"
@@ -320,13 +320,13 @@ const sections = [
               />
             </div>
             <p class="text-xs" :class="passwordStrength >= 3 ? 'text-green-500' : 'text-slate-400'">
-              密码强度：{{ strengthLabel }}
+              Password strength: {{ strengthLabel }}
             </p>
           </div>
         </div>
 
         <div class="space-y-2">
-          <label class="text-sm font-bold text-slate-600">确认新密码</label>
+          <label class="text-sm font-bold text-slate-600">Confirm New Password</label>
           <div class="relative">
             <input
               v-model="passwordForm.confirm"
@@ -337,7 +337,7 @@ const sections = [
                   ? 'border-red-300'
                   : ''
               "
-              placeholder="再次输入新密码"
+              placeholder="Re-enter new password"
             />
             <button
               @click="showPasswords.confirm = !showPasswords.confirm"
@@ -350,7 +350,7 @@ const sections = [
             v-if="passwordForm.confirm && passwordForm.confirm !== passwordForm.newPwd"
             class="text-xs text-red-400"
           >
-            两次密码不一致
+            Passwords do not match.
           </p>
         </div>
 
@@ -358,7 +358,7 @@ const sections = [
           v-if="passwordSuccess"
           class="flex items-center gap-2 text-green-600 bg-green-50 px-4 py-3 rounded-xl text-sm font-medium"
         >
-          <CheckCircle2 :size="16" /> 密码修改成功！
+          <CheckCircle2 :size="16" /> Password changed successfully!
         </div>
         <div
           v-if="passwordError"
@@ -377,11 +377,11 @@ const sections = [
             v-else
             class="w-4 h-4 border-2 border-white/50 border-t-white rounded-full animate-spin"
           />
-          {{ passwordSaving ? '修改中...' : '修改密码' }}
+          {{ passwordSaving ? 'Changing...' : 'Change Password' }}
         </button>
       </div>
 
-      <!-- 通知设置 -->
+      <!-- Notifications -->
       <div
         v-else-if="activeSection === 'notifications'"
         class="bg-white rounded-3xl p-7 shadow-lg border border-slate-100 space-y-6"
@@ -391,28 +391,28 @@ const sections = [
             <Bell :size="18" class="text-blue-500" />
           </div>
           <div>
-            <h2 class="font-bold text-lg text-slate-800">通知设置</h2>
-            <p class="text-xs text-slate-400">管理你希望接收的提醒类型</p>
+            <h2 class="font-bold text-lg text-slate-800">Notification Settings</h2>
+            <p class="text-xs text-slate-400">Manage the types of reminders you want to receive.</p>
           </div>
         </div>
         <div class="space-y-2">
-          <p class="text-xs font-bold text-slate-400 uppercase tracking-wider">宠物提醒</p>
+          <p class="text-xs font-bold text-slate-400 uppercase tracking-wider">Pet Reminders</p>
           <div
             v-for="item in [
               {
                 key: 'appointmentReminder',
                 icon: '📅',
-                label: '预约提醒',
-                desc: '就诊预约前1天提醒',
+                label: 'Appointment Reminder',
+                desc: 'Reminder 1 day before appointment',
               },
-              { key: 'vaccinationDue', icon: '💉', label: '疫苗到期', desc: '疫苗到期前7天提醒' },
+              { key: 'vaccinationDue', icon: '💉', label: 'Vaccine Due', desc: 'Reminder 7 days before vaccine expiry' },
               {
                 key: 'medicationReminder',
                 icon: '💊',
-                label: '用药提醒',
-                desc: '每日用药时间提醒',
+                label: 'Medication Reminder',
+                desc: 'Daily medication time reminder',
               },
-              { key: 'feedingReminder', icon: '🍖', label: '喂食提醒', desc: '每日喂食时间提醒' },
+              { key: 'feedingReminder', icon: '🍖', label: 'Feeding Reminder', desc: 'Daily feeding time reminder' },
             ]"
             :key="item.key"
             class="flex items-center justify-between p-4 bg-slate-50 rounded-2xl hover:bg-slate-100 transition-colors"
@@ -441,11 +441,11 @@ const sections = [
           </div>
         </div>
         <div class="space-y-2">
-          <p class="text-xs font-bold text-slate-400 uppercase tracking-wider">通知方式</p>
+          <p class="text-xs font-bold text-slate-400 uppercase tracking-wider">Notification Method</p>
           <div
             v-for="item in [
-              { key: 'pushNotify', icon: Smartphone, label: '应用推送', desc: '在应用内接收通知' },
-              { key: 'emailNotify', icon: Mail, label: '邮件通知', desc: '发送到注册邮箱' },
+              { key: 'pushNotify', icon: Smartphone, label: 'App Push', desc: 'Receive in-app notifications' },
+              { key: 'emailNotify', icon: Mail, label: 'Email Notification', desc: 'Send to registered email address' },
             ]"
             :key="item.key"
             class="flex items-center justify-between p-4 bg-slate-50 rounded-2xl hover:bg-slate-100 transition-colors"
@@ -477,7 +477,7 @@ const sections = [
         </div>
       </div>
 
-      <!-- 关于应用 -->
+      <!-- About -->
       <div v-else-if="activeSection === 'about'" class="space-y-4">
         <div class="bg-white rounded-3xl p-7 shadow-lg border border-slate-100">
           <div class="flex items-center gap-4 mb-6">
@@ -498,10 +498,10 @@ const sections = [
           <div class="space-y-3">
             <div
               v-for="item in [
-                { label: '前端框架', value: appInfo.frontend },
-                { label: '后端框架', value: appInfo.backend },
-                { label: '数据库', value: appInfo.database },
-                { label: '版本号', value: `v${appInfo.version}` },
+                { label: 'Frontend', value: appInfo.frontend },
+                { label: 'Backend', value: appInfo.backend },
+                { label: 'Database', value: appInfo.database },
+                { label: 'Version', value: `v${appInfo.version}` },
               ]"
               :key="item.label"
               class="flex items-center justify-between py-2.5 border-b border-slate-50"
@@ -513,15 +513,15 @@ const sections = [
         </div>
         <div class="bg-white rounded-3xl p-6 shadow-lg border border-slate-100">
           <h3 class="font-bold text-slate-800 mb-4 flex items-center gap-2">
-            <Heart :size="16" class="text-red-400" /> 开发团队
+            <Heart :size="16" class="text-red-400" /> Development Team
           </h3>
           <p class="text-sm text-slate-500 leading-relaxed">
             PetCare
-            是一款专为宠物主人设计的健康管理应用，帮助你记录宠物的成长、健康状况、医疗记录和日常生活。
+            is a health management app designed for pet owners — track growth, health, medical records, and daily life.
           </p>
           <div class="mt-4 p-3 bg-teal-50 rounded-xl">
             <p class="text-xs text-teal-600 text-center font-medium">
-              🐾 用爱心守护每一只宠物的健康
+              🐾 Caring for every pet with love
             </p>
           </div>
         </div>

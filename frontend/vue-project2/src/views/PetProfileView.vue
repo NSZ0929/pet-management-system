@@ -31,7 +31,7 @@ onMounted(() => {
   loadPets()
 })
 
-// ── 健康总结 ──────────────────────────────────────────────
+// ── Health Summary ──────────────────────────────────────────────
 const vitalSigns = ref<VitalSign[]>([])
 
 const loadVitalSigns = async () => {
@@ -42,7 +42,7 @@ const loadVitalSigns = async () => {
       (a, b) => new Date(b.recordTime ?? 0).getTime() - new Date(a.recordTime ?? 0).getTime(),
     )
   } catch {
-    console.error('加载生命体征失败')
+    console.error('Failed to load vital signs')
   }
 }
 
@@ -59,9 +59,9 @@ const latestVital = computed(() => vitalSigns.value[0] ?? null)
 const tempStatus = computed(() => {
   const t = latestVital.value?.temperature
   if (t == null) return null
-  if (t < 37.5) return { label: '体温偏低', color: 'text-blue-600', bg: 'bg-blue-50', icon: '🥶' }
-  if (t > 39.5) return { label: '体温偏高', color: 'text-red-600', bg: 'bg-red-50', icon: '🔥' }
-  return { label: '体温正常', color: 'text-green-600', bg: 'bg-green-50', icon: '✅' }
+  if (t < 37.5) return { label: 'Low Temperature', color: 'text-blue-600', bg: 'bg-blue-50', icon: '🥶' }
+  if (t > 39.5) return { label: 'High Temperature', color: 'text-red-600', bg: 'bg-red-50', icon: '🔥' }
+  return { label: 'Normal Temperature', color: 'text-green-600', bg: 'bg-green-50', icon: '✅' }
 })
 
 const weightStatus = computed(() => {
@@ -69,23 +69,23 @@ const weightStatus = computed(() => {
   const w1 = vitalSigns.value[1]?.weight
   if (w0 == null) return null
   if (w1 == null)
-    return { label: `体重 ${w0}kg`, color: 'text-teal-600', bg: 'bg-teal-50', icon: '⚖️' }
+    return { label: `Weight ${w0}kg`, color: 'text-teal-600', bg: 'bg-teal-50', icon: '⚖️' }
   const diff = w0 - w1
   if (diff > 0.5)
     return {
-      label: `体重上升 +${diff.toFixed(1)}kg`,
+      label: `Weight Up +${diff.toFixed(1)}kg`,
       color: 'text-amber-600',
       bg: 'bg-amber-50',
       icon: '📈',
     }
   if (diff < -0.5)
     return {
-      label: `体重下降 ${diff.toFixed(1)}kg`,
+      label: `Weight Down ${diff.toFixed(1)}kg`,
       color: 'text-blue-600',
       bg: 'bg-blue-50',
       icon: '📉',
     }
-  return { label: `体重稳定 ${w0}kg`, color: 'text-green-600', bg: 'bg-green-50', icon: '✅' }
+  return { label: `Weight Stable ${w0}kg`, color: 'text-green-600', bg: 'bg-green-50', icon: '✅' }
 })
 
 const healthSummary = computed(() => {
@@ -93,20 +93,20 @@ const healthSummary = computed(() => {
   const hasIssue = tempStatus.value?.icon === '🔥' || tempStatus.value?.icon === '🥶'
   if (hasIssue)
     return {
-      label: '需要关注',
+      label: 'Needs Attention',
       color: 'text-amber-700',
       bg: 'bg-amber-50',
       border: 'border-amber-200',
     }
   return {
-    label: '健康状态良好',
+    label: 'Healthy',
     color: 'text-green-700',
     bg: 'bg-green-50',
     border: 'border-green-200',
   }
 })
 
-// ── 添加宠物表单 ──────────────────────────────────────────
+// ── Add Pet Form ──────────────────────────────────────────
 const showAddPetForm = ref(false)
 const isSubmitting = ref(false)
 const submitError = ref('')
@@ -115,7 +115,7 @@ const newPet = ref({ name: '', breed: '', age: '' })
 
 const handleAddPet = async () => {
   if (!newPet.value.name || !newOwner.value.name || !newOwner.value.contact) {
-    submitError.value = '请填写宠物名称、主人姓名和联系方式'
+    submitError.value = 'Please fill in pet name, owner name and contact.'
     return
   }
   isSubmitting.value = true
@@ -139,14 +139,14 @@ const handleAddPet = async () => {
     newPet.value = { name: '', breed: '', age: '' }
     showAddPetForm.value = false
   } catch (err) {
-    submitError.value = '添加失败，请稍后重试'
+    submitError.value = 'Failed to add. Please try again.'
     console.error(err)
   } finally {
     isSubmitting.value = false
   }
 }
 
-// ── 编辑宠物信息 ──────────────────────────────────────────
+// ── Edit Pet Info ──────────────────────────────────────────
 const isEditingPet = ref(false)
 const editPetForm = ref({ name: '', breed: '', age: '' })
 
@@ -171,11 +171,11 @@ const savePet = async () => {
     await loadPets()
     isEditingPet.value = false
   } catch (err) {
-    console.error('更新宠物失败', err)
+    console.error('Failed to update pet', err)
   }
 }
 
-// ── 编辑主人信息 ──────────────────────────────────────────
+// ── Edit Owner Info ──────────────────────────────────────────
 const isEditingOwner = ref(false)
 const editOwnerForm = ref({ name: '', contact: '', address: '' })
 
@@ -200,11 +200,11 @@ const saveOwner = async () => {
     await loadPets()
     isEditingOwner.value = false
   } catch (err) {
-    console.error('更新主人失败', err)
+    console.error('Failed to update owner', err)
   }
 }
 
-// ── 编辑家庭环境 ──────────────────────────────────────────
+// ── Edit Home Environment ──────────────────────────────────────────
 const isEditingHousehold = ref(false)
 const editHouseholdForm = ref({
   environment: '',
@@ -241,11 +241,9 @@ const saveHousehold = async () => {
         : undefined,
     })
     await loadPets()
-    const updated = allPets.value.find((p) => p.id === currentPet.value?.id)
-    if (updated) selectPet(updated)
     isEditingHousehold.value = false
   } catch (err) {
-    console.error('更新家庭环境失败', err)
+    console.error('Failed to update home environment', err)
   } finally {
     householdSaving.value = false
   }
@@ -259,7 +257,7 @@ const saveHousehold = async () => {
       class="flex items-center justify-center py-20 gap-3 text-slate-400"
     >
       <Loader2 :size="24" class="animate-spin text-teal-500" />
-      <span class="text-sm font-medium">正在加载数据...</span>
+      <span class="text-sm font-medium">Loading data...</span>
     </div>
 
     <div
@@ -272,12 +270,12 @@ const saveHousehold = async () => {
         @click="loadPets"
         class="ml-auto flex items-center gap-1 text-xs font-bold hover:text-red-600"
       >
-        <RefreshCw :size="13" /> 重试
+        <RefreshCw :size="13" /> Retry
       </button>
     </div>
 
     <template v-else>
-      <!-- 顶部操作栏 -->
+      <!-- Top toolbar -->
       <div class="flex items-center justify-between">
         <div v-if="allPets.length > 1" class="flex gap-2 flex-wrap">
           <button
@@ -298,60 +296,60 @@ const saveHousehold = async () => {
           @click="showAddPetForm = !showAddPetForm"
           class="flex items-center gap-2 px-4 py-2 bg-teal-500 hover:bg-teal-600 text-white rounded-xl text-sm font-bold shadow-md shadow-teal-100 transition-all ml-auto"
         >
-          <Plus :size="16" /> 添加宠物
+          <Plus :size="16" /> Add Pet
         </button>
       </div>
 
-      <!-- 添加宠物表单 -->
+      <!-- Add pet form -->
       <transition name="slide">
         <div
           v-if="showAddPetForm"
           class="bg-white rounded-3xl p-6 shadow-lg border border-slate-100 space-y-4"
         >
           <h3 class="font-bold text-slate-800 flex items-center gap-2">
-            <PawPrint :size="18" class="text-teal-500" /> 添加新宠物
+            <PawPrint :size="18" class="text-teal-500" /> Add New Pet
           </h3>
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div class="space-y-3">
-              <p class="text-xs font-bold text-slate-400 uppercase">宠物信息</p>
+              <p class="text-xs font-bold text-slate-400 uppercase">Pet Info</p>
               <input
                 v-model="newPet.name"
                 type="text"
-                placeholder="宠物名称 *"
+                placeholder="Pet Name *"
                 class="w-full px-3 py-2.5 rounded-xl border-2 border-slate-100 bg-slate-50 text-sm font-medium focus:outline-none focus:border-teal-400 transition-all"
               />
               <input
                 v-model="newPet.breed"
                 type="text"
-                placeholder="品种（如：柯基 Corgi）"
+                placeholder="Breed (e.g. Corgi)"
                 class="w-full px-3 py-2.5 rounded-xl border-2 border-slate-100 bg-slate-50 text-sm font-medium focus:outline-none focus:border-teal-400 transition-all"
               />
               <input
                 v-model="newPet.age"
                 type="number"
-                placeholder="年龄（岁）"
+                placeholder="Age (years)"
                 min="0"
                 class="w-full px-3 py-2.5 rounded-xl border-2 border-slate-100 bg-slate-50 text-sm font-medium focus:outline-none focus:border-teal-400 transition-all"
               />
             </div>
             <div class="space-y-3">
-              <p class="text-xs font-bold text-slate-400 uppercase">主人信息</p>
+              <p class="text-xs font-bold text-slate-400 uppercase">Owner Info</p>
               <input
                 v-model="newOwner.name"
                 type="text"
-                placeholder="主人姓名 *"
+                placeholder="Owner Name *"
                 class="w-full px-3 py-2.5 rounded-xl border-2 border-slate-100 bg-slate-50 text-sm font-medium focus:outline-none focus:border-teal-400 transition-all"
               />
               <input
                 v-model="newOwner.contact"
                 type="text"
-                placeholder="联系方式 *"
+                placeholder="Contact *"
                 class="w-full px-3 py-2.5 rounded-xl border-2 border-slate-100 bg-slate-50 text-sm font-medium focus:outline-none focus:border-teal-400 transition-all"
               />
               <input
                 v-model="newOwner.address"
                 type="text"
-                placeholder="地址（可选）"
+                placeholder="Address (optional)"
                 class="w-full px-3 py-2.5 rounded-xl border-2 border-slate-100 bg-slate-50 text-sm font-medium focus:outline-none focus:border-teal-400 transition-all"
               />
             </div>
@@ -369,57 +367,57 @@ const saveHousehold = async () => {
               class="flex-1 py-2.5 bg-teal-500 hover:bg-teal-600 disabled:bg-teal-300 text-white rounded-xl text-sm font-bold transition-all flex items-center justify-center gap-2"
             >
               <Loader2 v-if="isSubmitting" :size="15" class="animate-spin" />
-              {{ isSubmitting ? '提交中...' : '确认添加' }}
+              {{ isSubmitting ? 'Submitting...' : 'Add Pet' }}
             </button>
             <button
               @click="showAddPetForm = false"
               class="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl text-sm font-bold transition-all"
             >
-              取消
+              Cancel
             </button>
           </div>
         </div>
       </transition>
 
-      <!-- 无宠物状态 -->
+      <!-- Empty state -->
       <div
         v-if="!currentPet"
         class="text-center py-20 bg-white rounded-3xl shadow-lg border border-slate-100"
       >
         <PawPrint :size="48" class="text-slate-200 mx-auto mb-4" />
-        <p class="text-slate-500 font-bold text-lg">还没有宠物档案</p>
-        <p class="text-slate-400 text-sm mt-2">点击右上角「添加宠物」开始吧 🐾</p>
+        <p class="text-slate-500 font-bold text-lg">No pet profiles yet</p>
+        <p class="text-slate-400 text-sm mt-2">Click "Add Pet" in the top right to get started 🐾</p>
       </div>
 
-      <!-- 宠物详情 -->
+      <!-- Pet details -->
       <div v-else class="grid grid-cols-1 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-        <!-- 左侧 -->
+        <!-- Left column -->
         <div class="lg:col-span-1 xl:col-span-1 space-y-6">
-          <!-- 宠物卡片 -->
+          <!-- Pet card -->
           <div class="bg-white rounded-3xl p-6 shadow-lg border border-slate-100">
             <div class="flex items-center justify-between mb-4">
               <h2 class="font-bold text-lg text-slate-800 flex items-center gap-2">
-                <Dog :size="18" class="text-teal-500" /> 宠物资料
+                <Dog :size="18" class="text-teal-500" /> Pet Profile
               </h2>
               <button
                 v-if="!isEditingPet"
                 @click="startEditPet"
                 class="flex items-center gap-1 text-xs font-bold text-slate-400 hover:text-teal-600 transition-colors"
               >
-                <Pencil :size="13" /> 编辑
+                <Pencil :size="13" /> Edit
               </button>
               <div v-else class="flex gap-1">
                 <button
                   @click="savePet"
                   class="flex items-center gap-1 text-xs font-bold text-teal-600 bg-teal-50 px-2 py-1 rounded-lg"
                 >
-                  <Check :size="13" /> 保存
+                  <Check :size="13" /> Save
                 </button>
                 <button
                   @click="isEditingPet = false"
                   class="flex items-center gap-1 text-xs font-bold text-slate-400 bg-slate-100 px-2 py-1 rounded-lg"
                 >
-                  <X :size="13" /> 取消
+                  <X :size="13" /> Cancel
                 </button>
               </div>
             </div>
@@ -438,23 +436,23 @@ const saveHousehold = async () => {
 
             <div v-if="!isEditingPet" class="space-y-2 mt-4">
               <div class="flex justify-between items-center py-2 border-b border-slate-100">
-                <span class="text-sm text-slate-500">名字 Name</span>
+                <span class="text-sm text-slate-500">Name</span>
                 <span class="font-bold text-slate-700">{{ currentPet.name }}</span>
               </div>
               <div class="flex justify-between items-center py-2 border-b border-slate-100">
-                <span class="text-sm text-slate-500">品种 Breed</span>
+                <span class="text-sm text-slate-500">Breed</span>
                 <span class="font-bold text-slate-700">{{ currentPet.breed || '—' }}</span>
               </div>
               <div class="flex justify-between items-center py-2 border-b border-slate-100">
-                <span class="text-sm text-slate-500">年龄 Age</span>
+                <span class="text-sm text-slate-500">Age</span>
                 <span class="font-bold text-slate-700">{{
-                  currentPet.age != null ? `${currentPet.age} 岁` : '—'
+                  currentPet.age != null ? `${currentPet.age} yr` : '—'
                 }}</span>
               </div>
             </div>
             <div v-else class="space-y-2 mt-4">
               <div>
-                <label class="text-xs font-bold text-slate-400 block mb-1">名字</label
+                <label class="text-xs font-bold text-slate-400 block mb-1">Name</label
                 ><input
                   v-model="editPetForm.name"
                   type="text"
@@ -462,7 +460,7 @@ const saveHousehold = async () => {
                 />
               </div>
               <div>
-                <label class="text-xs font-bold text-slate-400 block mb-1">品种</label
+                <label class="text-xs font-bold text-slate-400 block mb-1">Breed</label
                 ><input
                   v-model="editPetForm.breed"
                   type="text"
@@ -470,7 +468,7 @@ const saveHousehold = async () => {
                 />
               </div>
               <div>
-                <label class="text-xs font-bold text-slate-400 block mb-1">年龄（岁）</label
+                <label class="text-xs font-bold text-slate-400 block mb-1">Age (yrs)</label
                 ><input
                   v-model="editPetForm.age"
                   type="number"
@@ -481,14 +479,14 @@ const saveHousehold = async () => {
             </div>
           </div>
 
-          <!-- 健康总结 -->
+          <!-- Health Summary -->
           <div class="bg-white rounded-3xl p-6 shadow-lg border border-slate-100">
             <h2 class="font-bold text-lg text-slate-800 mb-3 flex items-center gap-2">
-              <span class="text-lg">🩺</span> 健康总结
+              <span class="text-lg">🩺</span> Health Summary
             </h2>
             <div v-if="!latestVital" class="bg-slate-50 p-4 rounded-xl">
-              <p class="text-slate-500 font-bold text-sm">暂无体征数据</p>
-              <p class="text-xs text-slate-400 mt-1">请在「仪表盘」记录体温和体重后自动生成</p>
+              <p class="text-slate-500 font-bold text-sm">No vital sign data yet.</p>
+              <p class="text-xs text-slate-400 mt-1">Record temperature and weight in the Dashboard to generate this summary.</p>
             </div>
             <div v-else class="space-y-2">
               <div :class="['p-3 rounded-xl border', healthSummary?.bg, healthSummary?.border]">
@@ -496,7 +494,7 @@ const saveHousehold = async () => {
                   {{ healthSummary?.label }}
                 </p>
                 <p class="text-xs text-slate-400 mt-0.5">
-                  最近记录：{{
+                  Latest: {{
                     latestVital.recordTime
                       ? new Date(latestVital.recordTime).toLocaleDateString('zh-CN')
                       : '—'
@@ -511,7 +509,7 @@ const saveHousehold = async () => {
                 <div>
                   <p :class="['text-sm font-bold', tempStatus.color]">{{ tempStatus.label }}</p>
                   <p class="text-xs text-slate-400">
-                    {{ latestVital.temperature }}°C（正常范围 38~39.5°C）
+                    {{ latestVital.temperature }}°C (normal range: 38–39.5°C)
                   </p>
                 </div>
               </div>
@@ -522,46 +520,46 @@ const saveHousehold = async () => {
                 <span class="text-base">{{ weightStatus.icon }}</span>
                 <div>
                   <p :class="['text-sm font-bold', weightStatus.color]">{{ weightStatus.label }}</p>
-                  <p class="text-xs text-slate-400">共 {{ vitalSigns.length }} 条体征记录</p>
+                  <p class="text-xs text-slate-400">{{ vitalSigns.length }} vital sign records</p>
                 </div>
               </div>
             </div>
           </div>
         </div>
 
-        <!-- 右侧 -->
+        <!-- Right column -->
         <div class="lg:col-span-2 xl:col-span-3 grid grid-cols-1 md:grid-cols-2 gap-6">
-          <!-- 主人信息 -->
+          <!-- Owner Info -->
           <div class="bg-white rounded-3xl p-6 shadow-lg border border-slate-100">
             <div class="flex items-center justify-between mb-5">
               <h2 class="font-bold text-lg text-slate-800 flex items-center gap-2">
-                <User :size="18" class="text-amber-500" /> 主人信息
+                <User :size="18" class="text-amber-500" /> Owner Info
               </h2>
               <button
                 v-if="!isEditingOwner && currentPet.owner"
                 @click="startEditOwner"
                 class="flex items-center gap-1 text-xs font-bold text-slate-400 hover:text-amber-600 transition-colors"
               >
-                <Pencil :size="13" /> 编辑
+                <Pencil :size="13" /> Edit
               </button>
               <div v-else-if="isEditingOwner" class="flex gap-1">
                 <button
                   @click="saveOwner"
                   class="flex items-center gap-1 text-xs font-bold text-amber-600 bg-amber-50 px-2 py-1 rounded-lg"
                 >
-                  <Check :size="13" /> 保存
+                  <Check :size="13" /> Save
                 </button>
                 <button
                   @click="isEditingOwner = false"
                   class="flex items-center gap-1 text-xs font-bold text-slate-400 bg-slate-100 px-2 py-1 rounded-lg"
                 >
-                  <X :size="13" /> 取消
+                  <X :size="13" /> Cancel
                 </button>
               </div>
             </div>
             <div v-if="!currentPet.owner" class="text-center py-6 text-slate-400">
               <User :size="32" class="mx-auto mb-2 text-slate-200" />
-              <p class="text-sm">暂无主人信息</p>
+              <p class="text-sm">No owner info available.</p>
             </div>
             <div v-else-if="!isEditingOwner" class="space-y-3">
               <div class="flex items-center gap-3 bg-slate-50 p-3.5 rounded-xl">
@@ -571,7 +569,7 @@ const saveHousehold = async () => {
                   <User :size="15" />
                 </div>
                 <div>
-                  <p class="text-xs text-slate-400 font-bold uppercase">姓名</p>
+                  <p class="text-xs text-slate-400 font-bold uppercase">Name</p>
                   <p class="font-bold text-slate-700">{{ currentPet.owner.name }}</p>
                 </div>
               </div>
@@ -582,9 +580,9 @@ const saveHousehold = async () => {
                   <Phone :size="15" />
                 </div>
                 <div>
-                  <p class="text-xs text-slate-400 font-bold uppercase">联系方式</p>
+                  <p class="text-xs text-slate-400 font-bold uppercase">Contact</p>
                   <p class="font-bold text-slate-700">
-                    {{ currentPet.owner.contact || '暂未填写' }}
+                    {{ currentPet.owner.contact || 'Not set' }}
                   </p>
                 </div>
               </div>
@@ -595,16 +593,16 @@ const saveHousehold = async () => {
                   <MapPin :size="15" />
                 </div>
                 <div>
-                  <p class="text-xs text-slate-400 font-bold uppercase">地址</p>
+                  <p class="text-xs text-slate-400 font-bold uppercase">Address</p>
                   <p class="font-bold text-slate-700 text-sm">
-                    {{ currentPet.owner.address || '暂未填写' }}
+                    {{ currentPet.owner.address || 'Not set' }}
                   </p>
                 </div>
               </div>
             </div>
             <div v-else class="space-y-3">
               <div>
-                <label class="text-xs font-bold text-slate-400 block mb-1">姓名</label
+                <label class="text-xs font-bold text-slate-400 block mb-1">Name</label
                 ><input
                   v-model="editOwnerForm.name"
                   type="text"
@@ -612,7 +610,7 @@ const saveHousehold = async () => {
                 />
               </div>
               <div>
-                <label class="text-xs font-bold text-slate-400 block mb-1">联系方式</label
+                <label class="text-xs font-bold text-slate-400 block mb-1">Contact</label
                 ><input
                   v-model="editOwnerForm.contact"
                   type="text"
@@ -620,7 +618,7 @@ const saveHousehold = async () => {
                 />
               </div>
               <div>
-                <label class="text-xs font-bold text-slate-400 block mb-1">地址</label
+                <label class="text-xs font-bold text-slate-400 block mb-1">Address</label
                 ><input
                   v-model="editOwnerForm.address"
                   type="text"
@@ -630,18 +628,18 @@ const saveHousehold = async () => {
             </div>
           </div>
 
-          <!-- 家庭环境 -->
+          <!-- Home Environment -->
           <div class="bg-white rounded-3xl p-6 shadow-lg border border-slate-100">
             <div class="flex items-center justify-between mb-5">
               <h2 class="font-bold text-lg text-slate-800 flex items-center gap-2">
-                <Home :size="18" class="text-sky-500" /> 家庭环境
+                <Home :size="18" class="text-sky-500" /> Home Environment
               </h2>
               <button
                 v-if="!isEditingHousehold && currentPet.owner"
                 @click="startEditHousehold"
                 class="flex items-center gap-1 text-xs font-bold text-slate-400 hover:text-sky-600 transition-colors"
               >
-                <Pencil :size="13" /> 编辑
+                <Pencil :size="13" /> Edit
               </button>
               <div v-else-if="isEditingHousehold" class="flex gap-1">
                 <button
@@ -650,18 +648,18 @@ const saveHousehold = async () => {
                   class="flex items-center gap-1 text-xs font-bold text-sky-600 bg-sky-50 px-2 py-1 rounded-lg"
                 >
                   <Loader2 v-if="householdSaving" :size="12" class="animate-spin" />
-                  <Check v-else :size="13" /> 保存
+                  <Check v-else :size="13" /> Save
                 </button>
                 <button
                   @click="isEditingHousehold = false"
                   class="flex items-center gap-1 text-xs font-bold text-slate-400 bg-slate-100 px-2 py-1 rounded-lg"
                 >
-                  <X :size="13" /> 取消
+                  <X :size="13" /> Cancel
                 </button>
               </div>
             </div>
 
-            <!-- 查看模式 -->
+            <!-- View mode -->
             <div v-if="!isEditingHousehold" class="space-y-3">
               <div class="flex items-center gap-3 bg-slate-50 p-3.5 rounded-xl">
                 <div
@@ -670,14 +668,14 @@ const saveHousehold = async () => {
                   <Sun :size="15" />
                 </div>
                 <div>
-                  <p class="text-xs text-slate-400 font-bold uppercase">居住环境</p>
+                  <p class="text-xs text-slate-400 font-bold uppercase">Living Environment</p>
                   <p
                     class="font-bold text-sm"
                     :class="
                       currentPet.owner?.environment ? 'text-slate-700' : 'text-slate-400 italic'
                     "
                   >
-                    {{ currentPet.owner?.environment || '待填写' }}
+                    {{ currentPet.owner?.environment || 'Not set' }}
                   </p>
                 </div>
               </div>
@@ -688,14 +686,14 @@ const saveHousehold = async () => {
                   <Thermometer :size="15" />
                 </div>
                 <div>
-                  <p class="text-xs text-slate-400 font-bold uppercase">环境气温</p>
+                  <p class="text-xs text-slate-400 font-bold uppercase">Ambient Temperature</p>
                   <p
                     class="font-bold text-sm"
                     :class="
                       currentPet.owner?.homeTemperature ? 'text-slate-700' : 'text-slate-400 italic'
                     "
                   >
-                    {{ currentPet.owner?.homeTemperature || '待填写' }}
+                    {{ currentPet.owner?.homeTemperature || 'Not set' }}
                   </p>
                 </div>
               </div>
@@ -706,14 +704,14 @@ const saveHousehold = async () => {
                   <PawPrint :size="15" />
                 </div>
                 <div>
-                  <p class="text-xs text-slate-400 font-bold uppercase">其他宠物</p>
+                  <p class="text-xs text-slate-400 font-bold uppercase">Other Pets</p>
                   <p
                     class="font-bold text-sm"
                     :class="
                       currentPet.owner?.otherPets ? 'text-slate-700' : 'text-slate-400 italic'
                     "
                   >
-                    {{ currentPet.owner?.otherPets || '待填写' }}
+                    {{ currentPet.owner?.otherPets || 'Not set' }}
                   </p>
                 </div>
               </div>
@@ -724,48 +722,48 @@ const saveHousehold = async () => {
                   <Users :size="15" />
                 </div>
                 <div>
-                  <p class="text-xs text-slate-400 font-bold uppercase">家庭成员数</p>
+                  <p class="text-xs text-slate-400 font-bold uppercase">Household Members</p>
                   <p
                     class="font-bold text-sm"
                     :class="currentPet.owner?.members ? 'text-slate-700' : 'text-slate-400 italic'"
                   >
-                    {{ currentPet.owner?.members ? `${currentPet.owner.members} 人` : '待填写' }}
+                    {{ currentPet.owner?.members ? `${currentPet.owner.members} people` : 'Not set' }}
                   </p>
                 </div>
               </div>
             </div>
 
-            <!-- 编辑模式 -->
+            <!-- Edit mode -->
             <div v-else class="space-y-3">
               <div>
-                <label class="text-xs font-bold text-slate-400 block mb-1">居住环境</label>
+                <label class="text-xs font-bold text-slate-400 block mb-1">Living Environment</label>
                 <input
                   v-model="editHouseholdForm.environment"
                   type="text"
-                  placeholder="e.g. 公寓（有阳台）"
+                  placeholder="e.g. Apartment (with balcony)"
                   class="w-full px-3 py-2 rounded-xl border-2 border-slate-100 bg-slate-50 text-sm font-medium focus:outline-none focus:border-sky-400 transition-all"
                 />
               </div>
               <div>
-                <label class="text-xs font-bold text-slate-400 block mb-1">环境气温</label>
+                <label class="text-xs font-bold text-slate-400 block mb-1">Ambient Temperature</label>
                 <input
                   v-model="editHouseholdForm.homeTemperature"
                   type="text"
-                  placeholder="e.g. 室内恒温 24°C"
+                  placeholder="e.g. Indoor 24°C"
                   class="w-full px-3 py-2 rounded-xl border-2 border-slate-100 bg-slate-50 text-sm font-medium focus:outline-none focus:border-sky-400 transition-all"
                 />
               </div>
               <div>
-                <label class="text-xs font-bold text-slate-400 block mb-1">其他宠物</label>
+                <label class="text-xs font-bold text-slate-400 block mb-1">Other Pets</label>
                 <input
                   v-model="editHouseholdForm.otherPets"
                   type="text"
-                  placeholder="e.g. 1只波斯猫"
+                  placeholder="e.g. 1 Persian cat"
                   class="w-full px-3 py-2 rounded-xl border-2 border-slate-100 bg-slate-50 text-sm font-medium focus:outline-none focus:border-sky-400 transition-all"
                 />
               </div>
               <div>
-                <label class="text-xs font-bold text-slate-400 block mb-1">家庭成员数</label>
+                <label class="text-xs font-bold text-slate-400 block mb-1">Household Members</label>
                 <input
                   v-model="editHouseholdForm.members"
                   type="number"
@@ -777,10 +775,10 @@ const saveHousehold = async () => {
             </div>
           </div>
 
-          <!-- 旗下宠物列表 -->
+          <!-- All Pets -->
           <div class="md:col-span-2 bg-white rounded-3xl p-6 shadow-lg border border-slate-100">
             <h2 class="font-bold text-lg text-slate-800 mb-4 flex items-center gap-2">
-              <Users :size="18" class="text-slate-500" /> 旗下宠物列表
+              <Users :size="18" class="text-slate-500" /> All Pets
             </h2>
             <div class="flex flex-wrap gap-2">
               <span
@@ -794,9 +792,9 @@ const saveHousehold = async () => {
                     : 'bg-slate-100 text-slate-700 hover:bg-teal-50 hover:text-teal-700',
                 ]"
               >
-                🐾 {{ pet.name }}（{{ pet.breed || '未知品种' }}）
+                🐾 {{ pet.name }}（{{ pet.breed || 'Unknown breed' }}）
               </span>
-              <span v-if="allPets.length === 0" class="text-sm text-slate-400">暂无宠物</span>
+              <span v-if="allPets.length === 0" class="text-sm text-slate-400">No pets found.</span>
             </div>
           </div>
         </div>
