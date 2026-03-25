@@ -65,10 +65,11 @@ public class AppointmentController {
     @PutMapping("/{id}")
     public Appointment updateAppointment(
             @PathVariable @NonNull Long id,
-            @RequestBody @NonNull Appointment updated
+            @RequestBody @NonNull Appointment updated,
+            @RequestParam(required = false) Long vetId
     ) {
         return Objects.requireNonNull(
-                appointmentService.updateAppointment(id, updated),
+                appointmentService.updateAppointment(id, updated, vetId),
                 "Failed to update appointment"
         );
     }

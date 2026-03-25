@@ -70,7 +70,7 @@ public class AppointmentService {
     /**
      * 更新预约
      */
-    public Appointment updateAppointment(Long id, Appointment updated) {
+    public Appointment updateAppointment(Long id, Appointment updated, Long vetId) {
         if (updated == null) throw new RuntimeException("Updated appointment cannot be null");
 
         Appointment appointment = getAppointmentById(id);
@@ -81,6 +81,11 @@ public class AppointmentService {
         }
         if (updated.getDescription() != null) {
             appointment.setDescription(updated.getDescription());
+        }
+        if (vetId != null) {
+            Vet vet = vetRepository.findById(vetId)
+                    .orElseThrow(() -> new RuntimeException("Vet not found with id: " + vetId));
+            appointment.setVet(vet);
         }
 
         return appointmentRepository.save(appointment);

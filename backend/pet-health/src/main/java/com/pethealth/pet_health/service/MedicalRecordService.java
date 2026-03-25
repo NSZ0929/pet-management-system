@@ -81,12 +81,12 @@ public class MedicalRecordService {
             record.setVisitDate(updatedRecord.getVisitDate());
         }
 
+        // 只有在前端明确传了 diseaseId 时才更新疾病关联；
+        // 未传时保留原有 disease，避免编辑标题/描述时把原关联清空。
         if (diseaseId != null) {
             Disease disease = diseaseRepository.findById(diseaseId)
                     .orElseThrow(() -> new RuntimeException("Disease not found with id: " + diseaseId));
             record.setDisease(disease);
-        } else {
-            record.setDisease(null);
         }
 
         return medicalRecordRepository.save(record);
@@ -105,10 +105,11 @@ public class MedicalRecordService {
         return medicalRecordRepository.findByPetId(petId);
     }
 
-    public List<MedicalRecord> searchRecords(String title) {
-        if (title == null || title.trim().isEmpty()) {
-            return getAllRecords();
+    public List<MedicalRecord> searchRecords(Long petId, String keyword) {
+        if (petId == null) throw new IllegalArgumentException("Pet ID cannot be null");
+        if (keyword == null || keyword.trim().isEmpty()) {
+            return getRecordsByPet(petId);
         }
-        return medicalRecordRepository.findByTitleContainingIgnoreCase(title);
+        return medicalRecordRepository.searchByPetAndKeyword(petId, keyword.trim());
     }
 }

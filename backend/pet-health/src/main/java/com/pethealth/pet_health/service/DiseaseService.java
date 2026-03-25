@@ -53,6 +53,7 @@ public class DiseaseService {
         Disease disease = getDiseaseById(id); // 已包含不存在异常
 
         disease.setName(updatedDisease.getName());
+        disease.setCategory(updatedDisease.getCategory());
         disease.setDescription(updatedDisease.getDescription());
 
         return diseaseRepository.save(disease);
@@ -77,6 +78,6 @@ public class DiseaseService {
         if (name.isBlank()) {
             throw new IllegalArgumentException("Search name cannot be empty");
         }
-        return diseaseRepository.findByNameContainingIgnoreCase(name);
+        return diseaseRepository.findByNameContainingIgnoreCaseOrCategoryContainingIgnoreCase(name, name);
     }
 }

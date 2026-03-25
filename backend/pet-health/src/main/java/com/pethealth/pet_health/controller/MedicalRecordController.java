@@ -64,7 +64,10 @@ public class MedicalRecordController {
     }
 
     @GetMapping("/search")
-    public List<MedicalRecord> searchRecords(@RequestParam String title) {
-        return medicalRecordService.searchRecords(title);
+    public List<MedicalRecord> searchRecords(
+            @RequestParam Long petId,
+            @RequestParam String keyword
+    ) {
+        return medicalRecordService.searchRecords(petId, keyword);
     }
 }

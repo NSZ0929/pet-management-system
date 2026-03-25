@@ -7,7 +7,7 @@ import java.time.LocalDate;
 
 @Entity
 @Table(name = "medical_records")
-@JsonIgnoreProperties({"pet", "disease"}) // 避免序列化循环
+@JsonIgnoreProperties({"pet", "disease", "hibernateLazyInitializer", "handler"}) // 避免序列化循环，并保留疾病摘要字段
 public class MedicalRecord {
 
     @Id
@@ -60,4 +60,19 @@ public class MedicalRecord {
 
     public Disease getDisease() { return disease; }
     public void setDisease(Disease disease) { this.disease = disease; }
+    @Transient
+    public Long getDiseaseId() {
+        return disease != null ? disease.getId() : null;
+    }
+
+    @Transient
+    public String getDiseaseName() {
+        return disease != null ? disease.getName() : null;
+    }
+
+    @Transient
+    public String getDiseaseCategory() {
+        return disease != null ? disease.getCategory() : null;
+    }
+
 }

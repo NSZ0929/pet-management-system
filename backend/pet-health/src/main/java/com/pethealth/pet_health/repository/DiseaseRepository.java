@@ -8,4 +8,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface DiseaseRepository extends JpaRepository<Disease, Long> {
 
-    List<Disease> findByNameContainingIgnoreCase(String name); }
+    List<Disease> findByNameContainingIgnoreCase(String name);
+
+    List<Disease> findByNameContainingIgnoreCaseOrCategoryContainingIgnoreCase(String name, String category);
+}
