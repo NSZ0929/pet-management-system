@@ -39,6 +39,10 @@ export const getAllAppointments = () =>
 export const getAppointmentsByPet = (petId: number) =>
   http.get<Appointment[]>('/appointments', { params: { petId } })
 
+// 根据 ID 获取单条预约
+export const getAppointmentById = (id: number) =>
+  http.get<Appointment>(`/appointments/${id}`)
+
 // 新增预约（需要同时传 petId 和 vetId 作为 query 参数）
 export const addAppointment = (
   payload: AddAppointmentPayload,
@@ -50,7 +54,7 @@ export const addAppointment = (
   })
 
 // 更新预约
-export const updateAppointment = (id: number, payload: Partial<AddAppointmentPayload>) =>
+export const updateAppointment = (id: number, payload: AddAppointmentPayload) =>
   http.put<Appointment>(`/appointments/${id}`, payload)
 
 // 删除预约
@@ -62,6 +66,10 @@ export const deleteAppointment = (id: number) =>
 // 获取所有兽医
 export const getAllVets = () =>
   http.get<Vet[]>('/api/v1/vets')
+
+// 根据 ID 获取单个兽医
+export const getVetById = (id: number) =>
+  http.get<Vet>(`/api/v1/vets/${id}`)
 
 // 新增兽医
 export const addVet = (vet: Omit<Vet, 'id'>) =>

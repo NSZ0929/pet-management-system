@@ -12,12 +12,18 @@ import {
   ChevronUp,
   X,
   Check,
+  Pencil,
+  FlaskConical,
 } from 'lucide-vue-next'
 import {
   getMedicalRecordsByPet,
   addMedicalRecord,
+  updateMedicalRecord,
   deleteMedicalRecord,
   getAllDiseases,
+  addDisease,
+  updateDisease,
+  deleteDisease,
   type MedicalRecord,
   type Disease,
   type AddMedicalRecordPayload,
@@ -77,7 +83,9 @@ const filteredRecords = computed(() => {
   )
 })
 
-// ── Add Form ──────────────────────────────────────────────
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// Add Record Form
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 const showAddForm = ref(false)
 const submitting = ref(false)
 const submitError = ref('')
@@ -139,7 +147,78 @@ const handleAddRecord = async () => {
   }
 }
 
-// ── Delete ──────────────────────────────────────────────────
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// Edit Record Form
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+const editingRecord = ref<MedicalRecord | null>(null)
+const editRecord = ref<AddMedicalRecordPayload>({ title: '', description: '', visitDate: '' })
+const editDiseaseId = ref<number | undefined>(undefined)
+const editDiseaseSearch = ref('')
+const showEditDiseaseDropdown = ref(false)
+const editSubmitting = ref(false)
+const editError = ref('')
+
+const filteredEditDiseases = computed(() => {
+  if (!editDiseaseSearch.value.trim()) return diseases.value
+  return diseases.value.filter(
+    (d: Disease) =>
+      d.name.includes(editDiseaseSearch.value) || d.category?.includes(editDiseaseSearch.value),
+  )
+})
+
+const selectedEditDisease = computed(() =>
+  diseases.value.find((d: Disease) => d.id === editDiseaseId.value),
+)
+
+const openEditRecord = (record: MedicalRecord) => {
+  editingRecord.value = record
+  editRecord.value = {
+    title: record.title,
+    description: record.description ?? '',
+    visitDate: record.visitDate ?? new Date().toISOString().split('T')[0],
+  }
+  editDiseaseId.value = undefined
+  editDiseaseSearch.value = ''
+  editError.value = ''
+  showAddForm.value = false
+}
+
+const closeEditRecord = () => {
+  editingRecord.value = null
+  editError.value = ''
+}
+
+const selectEditDisease = (disease: Disease) => {
+  editDiseaseId.value = disease.id
+  editDiseaseSearch.value = disease.name
+  showEditDiseaseDropdown.value = false
+}
+
+const clearEditDisease = () => {
+  editDiseaseId.value = undefined
+  editDiseaseSearch.value = ''
+}
+
+const handleEditRecord = async () => {
+  if (!editingRecord.value) return
+  if (!editRecord.value.title.trim()) {
+    editError.value = 'Please enter a record title.'
+    return
+  }
+  editSubmitting.value = true
+  editError.value = ''
+  try {
+    await updateMedicalRecord(editingRecord.value.id, editRecord.value, editDiseaseId.value)
+    await loadRecords()
+    closeEditRecord()
+  } catch {
+    editError.value = 'Failed to update. Please try again.'
+  } finally {
+    editSubmitting.value = false
+  }
+}
+
+// ── Delete Record ──────────────────────────────────────────────────
 const deletingId = ref<number | null>(null)
 
 const handleDelete = async (id: number) => {
@@ -147,6 +226,7 @@ const handleDelete = async (id: number) => {
   deletingId.value = id
   try {
     await deleteMedicalRecord(id)
+    if (editingRecord.value?.id === id) closeEditRecord()
     await loadRecords()
   } catch {
     error.value = 'Delete failed. Please try again.'
@@ -159,6 +239,114 @@ const handleDelete = async (id: number) => {
 const expandedId = ref<number | null>(null)
 const toggleExpand = (id: number) => {
   expandedId.value = expandedId.value === id ? null : id
+}
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// Disease Management
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+const showDiseasePanel = ref(false)
+const diseaseLoading = ref(false)
+const showDiseaseAddForm = ref(false)
+const newDisease = ref({ name: '', category: '', description: '' })
+const diseaseAddSubmitting = ref(false)
+const diseaseAddError = ref('')
+const diseaseDeleteError = ref('')
+
+// Edit disease
+const editingDisease = ref<Disease | null>(null)
+const editDiseaseForm = ref({ name: '', category: '', description: '' })
+const diseaseEditSubmitting = ref(false)
+const diseaseEditError = ref('')
+
+const diseaseFilterKeyword = ref('')
+const filteredDiseaseList = computed(() => {
+  if (!diseaseFilterKeyword.value.trim()) return diseases.value
+  return diseases.value.filter(
+    d => d.name.includes(diseaseFilterKeyword.value) || d.category?.includes(diseaseFilterKeyword.value),
+  )
+})
+
+const handleAddDisease = async () => {
+  if (!newDisease.value.name.trim()) {
+    diseaseAddError.value = 'Disease name cannot be empty.'
+    return
+  }
+  diseaseAddSubmitting.value = true
+  diseaseAddError.value = ''
+  try {
+    await addDisease({
+      name: newDisease.value.name.trim(),
+      category: newDisease.value.category.trim() || undefined,
+      description: newDisease.value.description.trim() || undefined,
+    })
+    await loadDiseases()
+    newDisease.value = { name: '', category: '', description: '' }
+    showDiseaseAddForm.value = false
+  } catch {
+    diseaseAddError.value = 'Failed to add disease.'
+  } finally {
+    diseaseAddSubmitting.value = false
+  }
+}
+
+const openEditDisease = (disease: Disease) => {
+  editingDisease.value = disease
+  editDiseaseForm.value = {
+    name: disease.name,
+    category: disease.category ?? '',
+    description: disease.description ?? '',
+  }
+  diseaseEditError.value = ''
+}
+
+const closeEditDisease = () => {
+  editingDisease.value = null
+  diseaseEditError.value = ''
+}
+
+const handleEditDisease = async () => {
+  if (!editingDisease.value) return
+  if (!editDiseaseForm.value.name.trim()) {
+    diseaseEditError.value = 'Disease name cannot be empty.'
+    return
+  }
+  diseaseEditSubmitting.value = true
+  diseaseEditError.value = ''
+  try {
+    await updateDisease(editingDisease.value.id, {
+      name: editDiseaseForm.value.name.trim(),
+      category: editDiseaseForm.value.category.trim() || undefined,
+      description: editDiseaseForm.value.description.trim() || undefined,
+    })
+    await loadDiseases()
+    closeEditDisease()
+  } catch {
+    diseaseEditError.value = 'Failed to update disease.'
+  } finally {
+    diseaseEditSubmitting.value = false
+  }
+}
+
+const handleDeleteDisease = async (id: number) => {
+  diseaseDeleteError.value = ''
+  try {
+    await deleteDisease(id)
+    await loadDiseases()
+  } catch (err: unknown) {
+  let msg = ''
+
+  if (typeof err === 'object' && err !== null) {
+    const e = err as {
+      response?: { data?: { message?: string } }
+      message?: string
+    }
+
+    msg = e.response?.data?.message || e.message || ''
+  }
+
+  diseaseDeleteError.value =
+    msg || 'Delete failed. This disease may be linked to existing records.'
+}
 }
 </script>
 
@@ -193,14 +381,28 @@ const toggleExpand = (id: number) => {
           </button>
         </div>
 
-        <!-- Add button -->
-        <button
-          @click="showAddForm = !showAddForm"
-          class="flex items-center gap-2 px-4 py-2 bg-teal-500 hover:bg-teal-600 text-white rounded-xl text-sm font-bold shadow-md shadow-teal-100 transition-all ml-auto"
-        >
-          <component :is="showAddForm ? X : Plus" :size="16" />
-          {{ showAddForm ? 'Cancel' : 'Add Record' }}
-        </button>
+        <!-- Action buttons -->
+        <div class="flex gap-2 ml-auto">
+          <button
+            @click="showDiseasePanel = !showDiseasePanel; showAddForm = false; closeEditRecord()"
+            :class="[
+              'flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold transition-all',
+              showDiseasePanel
+                ? 'bg-violet-500 text-white shadow-md shadow-violet-100'
+                : 'bg-violet-50 text-violet-600 hover:bg-violet-100',
+            ]"
+          >
+            <FlaskConical :size="16" />
+            Diseases
+          </button>
+          <button
+            @click="showAddForm = !showAddForm; showDiseasePanel = false; closeEditRecord()"
+            class="flex items-center gap-2 px-4 py-2 bg-teal-500 hover:bg-teal-600 text-white rounded-xl text-sm font-bold shadow-md shadow-teal-100 transition-all"
+          >
+            <component :is="showAddForm ? X : Plus" :size="16" />
+            {{ showAddForm ? 'Cancel' : 'Add Record' }}
+          </button>
+        </div>
       </div>
 
       <!-- Error -->
@@ -214,7 +416,125 @@ const toggleExpand = (id: number) => {
         </button>
       </div>
 
-      <!-- Add form -->
+      <!-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ -->
+      <!-- Disease Management Panel                  -->
+      <!-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ -->
+      <transition name="slide">
+        <div v-if="showDiseasePanel" class="bg-white rounded-3xl p-6 shadow-lg border border-violet-100 space-y-4">
+          <div class="flex items-center justify-between">
+            <h3 class="font-bold text-slate-800 flex items-center gap-2">
+              <FlaskConical :size="18" class="text-violet-500" /> Disease Management
+            </h3>
+            <button
+              @click="showDiseaseAddForm = !showDiseaseAddForm; closeEditDisease()"
+              class="flex items-center gap-1.5 text-sm font-bold text-violet-600 bg-violet-50 hover:bg-violet-100 px-3 py-1.5 rounded-xl transition-all"
+            >
+              <Plus :size="14" /> Add Disease
+            </button>
+          </div>
+
+          <!-- Add disease form -->
+          <transition name="slide">
+            <div v-if="showDiseaseAddForm" class="bg-slate-50 rounded-2xl p-4 space-y-3 border border-slate-200">
+              <div class="grid grid-cols-2 gap-3">
+                <div>
+                  <label class="text-xs font-bold text-slate-500 block mb-1">Name *</label>
+                  <input v-model="newDisease.name" type="text" placeholder="e.g. Parvovirus" class="w-full px-3 py-2 rounded-xl border-2 border-slate-100 bg-white text-sm font-medium focus:outline-none focus:border-violet-400 transition-all" />
+                </div>
+                <div>
+                  <label class="text-xs font-bold text-slate-500 block mb-1">Category</label>
+                  <input v-model="newDisease.category" type="text" placeholder="e.g. Infectious, Internal" class="w-full px-3 py-2 rounded-xl border-2 border-slate-100 bg-white text-sm font-medium focus:outline-none focus:border-violet-400 transition-all" />
+                </div>
+              </div>
+              <div>
+                <label class="text-xs font-bold text-slate-500 block mb-1">Description</label>
+                <input v-model="newDisease.description" type="text" placeholder="Brief description (optional)" class="w-full px-3 py-2 rounded-xl border-2 border-slate-100 bg-white text-sm font-medium focus:outline-none focus:border-violet-400 transition-all" />
+              </div>
+              <p v-if="diseaseAddError" class="text-xs text-red-500">{{ diseaseAddError }}</p>
+              <div class="flex gap-2">
+                <button @click="handleAddDisease" :disabled="diseaseAddSubmitting" class="flex-1 py-2 bg-violet-500 hover:bg-violet-600 disabled:opacity-50 text-white rounded-xl text-sm font-bold transition-all flex items-center justify-center gap-2">
+                  <Loader2 v-if="diseaseAddSubmitting" :size="13" class="animate-spin" /> Confirm
+                </button>
+                <button @click="showDiseaseAddForm = false" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl text-sm font-bold transition-all">Cancel</button>
+              </div>
+            </div>
+          </transition>
+
+          <!-- Edit disease form -->
+          <transition name="slide">
+            <div v-if="editingDisease" class="bg-violet-50 rounded-2xl p-4 space-y-3 border border-violet-200">
+              <p class="text-sm font-extrabold text-violet-700">Edit Disease <span class="font-normal text-violet-400">#{{ editingDisease.id }}</span></p>
+              <div class="grid grid-cols-2 gap-3">
+                <div>
+                  <label class="text-xs font-bold text-slate-500 block mb-1">Name *</label>
+                  <input v-model="editDiseaseForm.name" type="text" class="w-full px-3 py-2 rounded-xl border-2 border-slate-100 bg-white text-sm font-medium focus:outline-none focus:border-violet-400 transition-all" />
+                </div>
+                <div>
+                  <label class="text-xs font-bold text-slate-500 block mb-1">Category</label>
+                  <input v-model="editDiseaseForm.category" type="text" class="w-full px-3 py-2 rounded-xl border-2 border-slate-100 bg-white text-sm font-medium focus:outline-none focus:border-violet-400 transition-all" />
+                </div>
+              </div>
+              <div>
+                <label class="text-xs font-bold text-slate-500 block mb-1">Description</label>
+                <input v-model="editDiseaseForm.description" type="text" class="w-full px-3 py-2 rounded-xl border-2 border-slate-100 bg-white text-sm font-medium focus:outline-none focus:border-violet-400 transition-all" />
+              </div>
+              <p v-if="diseaseEditError" class="text-xs text-red-500">{{ diseaseEditError }}</p>
+              <div class="flex gap-2">
+                <button @click="handleEditDisease" :disabled="diseaseEditSubmitting" class="flex-1 py-2 bg-violet-500 hover:bg-violet-600 disabled:opacity-50 text-white rounded-xl text-sm font-bold transition-all flex items-center justify-center gap-2">
+                  <Loader2 v-if="diseaseEditSubmitting" :size="13" class="animate-spin" /> Save Changes
+                </button>
+                <button @click="closeEditDisease" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl text-sm font-bold transition-all flex items-center justify-center">
+                  <X :size="14" />
+                </button>
+              </div>
+            </div>
+          </transition>
+
+          <!-- Delete error -->
+          <div v-if="diseaseDeleteError" class="flex items-center gap-2 bg-red-50 text-red-600 text-sm px-4 py-3 rounded-xl">
+            <AlertCircle :size="15" />
+            {{ diseaseDeleteError }}
+            <button @click="diseaseDeleteError = ''" class="ml-auto text-xs underline">Dismiss</button>
+          </div>
+
+          <!-- Disease filter + list -->
+          <div class="relative">
+            <Search :size="14" class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+            <input v-model="diseaseFilterKeyword" type="text" placeholder="Filter diseases..." class="w-full pl-8 pr-3 py-2 rounded-xl border-2 border-slate-100 bg-slate-50 text-sm font-medium focus:outline-none focus:border-violet-400 transition-all" />
+          </div>
+
+          <div v-if="diseaseLoading" class="flex justify-center py-4">
+            <Loader2 :size="20" class="animate-spin text-violet-400" />
+          </div>
+          <div v-else-if="diseases.length === 0" class="text-center py-4 text-slate-400 text-sm">No diseases found. Add one above.</div>
+          <div v-else class="space-y-2 max-h-64 overflow-y-auto pr-1">
+            <div
+              v-for="disease in filteredDiseaseList"
+              :key="disease.id"
+              :class="[
+                'flex items-center justify-between px-4 py-2.5 rounded-xl border transition-all',
+                editingDisease?.id === disease.id ? 'border-violet-300 bg-violet-50/60' : 'border-slate-100 bg-slate-50',
+              ]"
+            >
+              <div class="min-w-0">
+                <p class="text-sm font-bold text-slate-800 truncate">{{ disease.name }}</p>
+                <p v-if="disease.category" class="text-xs text-slate-400">{{ disease.category }}</p>
+              </div>
+              <div class="flex items-center gap-2 flex-shrink-0">
+                <span class="text-xs text-slate-400">#{{ disease.id }}</span>
+                <button @click="openEditDisease(disease); showDiseaseAddForm = false" class="p-1 text-slate-300 hover:text-violet-400 transition-colors" title="Edit">
+                  <Pencil :size="14" />
+                </button>
+                <button @click="handleDeleteDisease(disease.id)" class="p-1 text-slate-300 hover:text-red-400 transition-colors" title="Delete">
+                  <Trash2 :size="14" />
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </transition>
+
+      <!-- Add Record Form -->
       <transition name="slide">
         <div
           v-if="showAddForm"
@@ -258,7 +578,7 @@ const toggleExpand = (id: number) => {
             <!-- Right column: linked diseases -->
             <div class="space-y-3">
               <div>
-                <label class="text-xs font-bold text-slate-500 block mb-1">Linked Diseases (optional)</label>
+                <label class="text-xs font-bold text-slate-500 block mb-1">Linked Disease (optional)</label>
                 <div class="relative">
                   <div class="flex gap-2">
                     <input
@@ -278,19 +598,15 @@ const toggleExpand = (id: number) => {
                     </button>
                   </div>
 
-                  <!-- Selected disease -->
                   <div
                     v-if="selectedDisease && !showDiseaseDropdown"
                     class="mt-2 flex items-center gap-2 bg-teal-50 border border-teal-100 px-3 py-2 rounded-xl"
                   >
                     <Check :size="14" class="text-teal-500" />
                     <span class="text-sm font-bold text-teal-700">{{ selectedDisease.name }}</span>
-                    <span v-if="selectedDisease.category" class="text-xs text-teal-400">{{
-                      selectedDisease.category
-                    }}</span>
+                    <span v-if="selectedDisease.category" class="text-xs text-teal-400">{{ selectedDisease.category }}</span>
                   </div>
 
-                  <!-- Dropdown -->
                   <div
                     v-if="showDiseaseDropdown && filteredDiseases.length > 0"
                     class="absolute z-10 w-full mt-1 bg-white border border-slate-100 rounded-2xl shadow-xl max-h-48 overflow-y-auto"
@@ -302,15 +618,10 @@ const toggleExpand = (id: number) => {
                       class="flex items-center justify-between px-4 py-2.5 hover:bg-teal-50 cursor-pointer transition-colors"
                     >
                       <span class="text-sm font-medium text-slate-700">{{ disease.name }}</span>
-                      <span
-                        v-if="disease.category"
-                        class="text-xs text-slate-400 bg-slate-100 px-2 py-0.5 rounded-full"
-                        >{{ disease.category }}</span
-                      >
+                      <span v-if="disease.category" class="text-xs text-slate-400 bg-slate-100 px-2 py-0.5 rounded-full">{{ disease.category }}</span>
                     </div>
                   </div>
 
-                  <!-- No match -->
                   <div
                     v-if="showDiseaseDropdown && filteredDiseases.length === 0"
                     class="absolute z-10 w-full mt-1 bg-white border border-slate-100 rounded-2xl shadow-xl px-4 py-3 text-sm text-slate-400 text-center"
@@ -320,7 +631,7 @@ const toggleExpand = (id: number) => {
                 </div>
               </div>
 
-              <!-- Disease list preview -->
+              <!-- Disease quick-pick chips -->
               <div v-if="diseases.length > 0" class="bg-slate-50 rounded-xl p-3">
                 <p class="text-xs font-bold text-slate-400 mb-2">Common Diseases</p>
                 <div class="flex flex-wrap gap-1.5">
@@ -342,7 +653,6 @@ const toggleExpand = (id: number) => {
             </div>
           </div>
 
-          <!-- Submit error -->
           <div
             v-if="submitError"
             class="flex items-center gap-2 text-red-500 bg-red-50 px-4 py-2.5 rounded-xl text-sm"
@@ -361,6 +671,120 @@ const toggleExpand = (id: number) => {
             </button>
             <button
               @click="showAddForm = false"
+              class="px-5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl text-sm font-bold transition-all"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      </transition>
+
+      <!-- Edit Record Form -->
+      <transition name="slide">
+        <div
+          v-if="editingRecord"
+          class="bg-white rounded-3xl p-6 shadow-lg border border-blue-200 space-y-4"
+        >
+          <h3 class="font-bold text-blue-700 flex items-center gap-2">
+            <Pencil :size="18" class="text-blue-400" />
+            Edit Medical Record
+            <span class="font-normal text-blue-400 text-sm">#{{ editingRecord.id }}</span>
+          </h3>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="space-y-3">
+              <div>
+                <label class="text-xs font-bold text-slate-500 block mb-1">Record Title *</label>
+                <input
+                  v-model="editRecord.title"
+                  type="text"
+                  class="w-full px-3 py-2.5 rounded-xl border-2 border-slate-100 bg-slate-50 text-sm font-medium focus:outline-none focus:border-blue-400 transition-all"
+                />
+              </div>
+              <div>
+                <label class="text-xs font-bold text-slate-500 block mb-1">Visit Date</label>
+                <input
+                  v-model="editRecord.visitDate"
+                  type="date"
+                  class="w-full px-3 py-2.5 rounded-xl border-2 border-slate-100 bg-slate-50 text-sm font-medium focus:outline-none focus:border-blue-400 transition-all"
+                />
+              </div>
+              <div>
+                <label class="text-xs font-bold text-slate-500 block mb-1">Description / Symptoms</label>
+                <textarea
+                  v-model="editRecord.description"
+                  rows="3"
+                  class="w-full px-3 py-2.5 rounded-xl border-2 border-slate-100 bg-slate-50 text-sm font-medium focus:outline-none focus:border-blue-400 transition-all resize-none"
+                />
+              </div>
+            </div>
+
+            <div class="space-y-3">
+              <div>
+                <label class="text-xs font-bold text-slate-500 block mb-1">Update Linked Disease (optional)</label>
+                <div class="relative">
+                  <div class="flex gap-2">
+                    <input
+                      v-model="editDiseaseSearch"
+                      type="text"
+                      placeholder="Search disease to link..."
+                      @focus="showEditDiseaseDropdown = true"
+                      @input="showEditDiseaseDropdown = true"
+                      class="flex-1 px-3 py-2.5 rounded-xl border-2 border-slate-100 bg-slate-50 text-sm font-medium focus:outline-none focus:border-blue-400 transition-all"
+                    />
+                    <button
+                      v-if="editDiseaseId"
+                      @click="clearEditDisease"
+                      class="px-3 py-2 bg-slate-100 hover:bg-slate-200 rounded-xl text-slate-500 transition-all"
+                    >
+                      <X :size="14" />
+                    </button>
+                  </div>
+
+                  <div
+                    v-if="selectedEditDisease && !showEditDiseaseDropdown"
+                    class="mt-2 flex items-center gap-2 bg-blue-50 border border-blue-100 px-3 py-2 rounded-xl"
+                  >
+                    <Check :size="14" class="text-blue-500" />
+                    <span class="text-sm font-bold text-blue-700">{{ selectedEditDisease.name }}</span>
+                    <span v-if="selectedEditDisease.category" class="text-xs text-blue-400">{{ selectedEditDisease.category }}</span>
+                  </div>
+
+                  <div
+                    v-if="showEditDiseaseDropdown && filteredEditDiseases.length > 0"
+                    class="absolute z-10 w-full mt-1 bg-white border border-slate-100 rounded-2xl shadow-xl max-h-48 overflow-y-auto"
+                  >
+                    <div
+                      v-for="disease in filteredEditDiseases"
+                      :key="disease.id"
+                      @click="selectEditDisease(disease)"
+                      class="flex items-center justify-between px-4 py-2.5 hover:bg-blue-50 cursor-pointer transition-colors"
+                    >
+                      <span class="text-sm font-medium text-slate-700">{{ disease.name }}</span>
+                      <span v-if="disease.category" class="text-xs text-slate-400 bg-slate-100 px-2 py-0.5 rounded-full">{{ disease.category }}</span>
+                    </div>
+                  </div>
+                </div>
+                <p class="text-xs text-slate-400 mt-1.5">Leave blank to keep the current linked disease unchanged.</p>
+              </div>
+            </div>
+          </div>
+
+          <div v-if="editError" class="flex items-center gap-2 text-red-500 bg-red-50 px-4 py-2.5 rounded-xl text-sm">
+            <AlertCircle :size="14" /> {{ editError }}
+          </div>
+
+          <div class="flex gap-2">
+            <button
+              @click="handleEditRecord"
+              :disabled="editSubmitting"
+              class="flex-1 py-2.5 bg-blue-500 hover:bg-blue-600 disabled:bg-blue-300 text-white rounded-xl text-sm font-bold transition-all flex items-center justify-center gap-2"
+            >
+              <Loader2 v-if="editSubmitting" :size="15" class="animate-spin" />
+              {{ editSubmitting ? 'Saving...' : 'Save Changes' }}
+            </button>
+            <button
+              @click="closeEditRecord"
               class="px-5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl text-sm font-bold transition-all"
             >
               Cancel
@@ -420,7 +844,10 @@ const toggleExpand = (id: number) => {
         <div
           v-for="record in filteredRecords"
           :key="record.id"
-          class="bg-white rounded-2xl shadow-md border border-slate-100 overflow-hidden transition-all hover:shadow-lg"
+          :class="[
+            'bg-white rounded-2xl shadow-md border overflow-hidden transition-all hover:shadow-lg',
+            editingRecord?.id === record.id ? 'border-blue-300' : 'border-slate-100',
+          ]"
         >
           <!-- Record header -->
           <div class="flex items-center gap-4 p-4 cursor-pointer" @click="toggleExpand(record.id)">
@@ -431,21 +858,28 @@ const toggleExpand = (id: number) => {
               <p class="font-bold text-slate-800 truncate">{{ record.title }}</p>
               <p class="text-xs text-slate-400 mt-0.5">📅 {{ record.visitDate ?? 'Date not recorded' }}</p>
             </div>
-            <div class="flex items-center gap-2 shrink-0">
+            <div class="flex items-center gap-1 shrink-0" @click.stop>
               <button
-                @click.stop="handleDelete(record.id)"
+                @click="openEditRecord(record)"
+                class="p-2 rounded-xl text-slate-300 hover:text-blue-400 hover:bg-blue-50 transition-all"
+                title="Edit"
+              >
+                <Pencil :size="15" />
+              </button>
+              <button
+                @click="handleDelete(record.id)"
                 :disabled="deletingId === record.id"
                 class="p-2 rounded-xl text-slate-300 hover:text-red-400 hover:bg-red-50 transition-all"
               >
                 <Loader2 v-if="deletingId === record.id" :size="15" class="animate-spin" />
                 <Trash2 v-else :size="15" />
               </button>
-              <component
-                :is="expandedId === record.id ? ChevronUp : ChevronDown"
-                :size="16"
-                class="text-slate-400"
-              />
             </div>
+            <component
+              :is="expandedId === record.id ? ChevronUp : ChevronDown"
+              :size="16"
+              class="text-slate-400 shrink-0"
+            />
           </div>
 
           <!-- Expanded details -->
@@ -477,6 +911,6 @@ const toggleExpand = (id: number) => {
 }
 .slide-enter-to,
 .slide-leave-from {
-  max-height: 800px;
+  max-height: 1200px;
 }
 </style>

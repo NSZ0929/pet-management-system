@@ -25,9 +25,17 @@ export interface AddMedicalRecordPayload {
 
 // ── 医疗记录 API ──────────────────────────────────────────
 
+// 获取所有医疗记录
+export const getAllMedicalRecords = () =>
+  http.get<MedicalRecord[]>('/medical-records')
+
 // 获取某只宠物的所有医疗记录
 export const getMedicalRecordsByPet = (petId: number) =>
   http.get<MedicalRecord[]>(`/medical-records/pet/${petId}`)
+
+// 根据 ID 获取单条医疗记录
+export const getMedicalRecordById = (id: number) =>
+  http.get<MedicalRecord>(`/medical-records/${id}`)
 
 // 添加医疗记录
 export const addMedicalRecord = (
@@ -52,11 +60,35 @@ export const updateMedicalRecord = (
 }
 
 // 删除医疗记录
-export const deleteMedicalRecord = (id: number) => http.delete(`/medical-records/${id}`)
+export const deleteMedicalRecord = (id: number) =>
+  http.delete(`/medical-records/${id}`)
+
+// 后端关键词搜索（按 title）
+export const searchMedicalRecords = (title: string) =>
+  http.get<MedicalRecord[]>('/medical-records/search', { params: { title } })
 
 // ── 疾病 API ──────────────────────────────────────────────
 
-export const getAllDiseases = () => http.get<Disease[]>('/diseases')
+// 获取所有疾病
+export const getAllDiseases = () =>
+  http.get<Disease[]>('/diseases')
 
+// 根据 ID 获取单个疾病
+export const getDiseaseById = (id: number) =>
+  http.get<Disease>(`/diseases/${id}`)
+
+// 新增疾病
+export const addDisease = (disease: Omit<Disease, 'id'>) =>
+  http.post<Disease>('/diseases', disease)
+
+// 更新疾病
+export const updateDisease = (id: number, disease: Omit<Disease, 'id'>) =>
+  http.put<Disease>(`/diseases/${id}`, disease)
+
+// 删除疾病
+export const deleteDisease = (id: number) =>
+  http.delete(`/diseases/${id}`)
+
+// 按名称搜索疾病（调用后端 /diseases/search?name=...）
 export const searchDiseases = (name: string) =>
   http.get<Disease[]>('/diseases/search', { params: { name } })

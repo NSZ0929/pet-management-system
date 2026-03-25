@@ -20,13 +20,17 @@ import {
   Loader2,
   RefreshCw,
   UserRound,
+  Pencil,
+  X,
 } from 'lucide-vue-next'
 import {
   getAppointmentsByPet,
   addAppointment,
+  updateAppointment,
   deleteAppointment,
   getAllVets,
   addVet,
+  deleteVet,
   type Appointment,
   type Vet,
   type AddAppointmentPayload,
@@ -76,6 +80,7 @@ const loadAppointments = async () => {
   }
 }
 
+// ── Add appointment ────────────────────────────────────────
 const showAppointmentForm = ref(false)
 const isSubmitting = ref(false)
 const submitError = ref('')
@@ -116,9 +121,66 @@ const handleAddAppointment = async () => {
   }
 }
 
+// ── Edit appointment ───────────────────────────────────────
+const editingAppointment = ref<Appointment | null>(null)
+const editForm = ref({
+  date: today,
+  time: now,
+  vetId: '',
+  description: '',
+})
+const isEditSubmitting = ref(false)
+const editError = ref('')
+
+const openEditForm = (appt: Appointment) => {
+  editingAppointment.value = appt
+  const d = new Date(appt.appointmentTime)
+  editForm.value = {
+    date: `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`,
+    time: `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`,
+    vetId: String(appt.vet.id),
+    description: appt.description ?? '',
+  }
+  editError.value = ''
+  // 关闭新增表单，避免两个表单同时展开
+  showAppointmentForm.value = false
+}
+
+const closeEditForm = () => {
+  editingAppointment.value = null
+  editError.value = ''
+}
+
+const handleEditAppointment = async () => {
+  if (!editingAppointment.value) return
+  if (!editForm.value.date || !editForm.value.vetId) {
+    editError.value = 'Please select a date and a vet.'
+    return
+  }
+  isEditSubmitting.value = true
+  editError.value = ''
+  try {
+    const appointmentTime = `${editForm.value.date}T${editForm.value.time}:00`
+    const payload: AddAppointmentPayload = {
+      appointmentTime,
+      description: editForm.value.description || undefined,
+    }
+    await updateAppointment(editingAppointment.value.id, payload)
+    await loadAppointments()
+    closeEditForm()
+  } catch (err) {
+    editError.value = 'Failed to update appointment. Please try again.'
+    console.error(err)
+  } finally {
+    isEditSubmitting.value = false
+  }
+}
+
+// ── Delete appointment ─────────────────────────────────────
 const handleDeleteAppointment = async (id: number) => {
   try {
     await deleteAppointment(id)
+    if (editingAppointment.value?.id === id) closeEditForm()
     await loadAppointments()
   } catch (err) {
     console.error('Failed to delete appointment', err)
@@ -145,6 +207,7 @@ const showVetForm = ref(false)
 const newVet = ref({ name: '', specialty: '' })
 const vetSubmitting = ref(false)
 const vetError = ref('')
+const vetDeleteError = ref('')
 
 const loadVets = async () => {
   vetLoading.value = true
@@ -176,6 +239,30 @@ const handleAddVet = async () => {
   } finally {
     vetSubmitting.value = false
   }
+}
+
+const handleDeleteVet = async (id: number) => {
+  vetDeleteError.value = ''
+  try {
+    await deleteVet(id)
+    await loadVets()
+  } catch (err: unknown) {
+  let msg = ''
+
+  if (typeof err === 'object' && err !== null) {
+    const e = err as {
+      response?: { data?: { message?: string } }
+      message?: string
+    }
+
+    msg = e.response?.data?.message || e.message || ''
+  }
+
+  vetDeleteError.value =
+    msg || 'Delete failed. This vet may have existing appointments.'
+
+  console.error('Failed to delete vet', err)
+}
 }
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -321,7 +408,7 @@ const formatDateTime = (dt: string) => {
 
         <!-- Toolbar -->
         <div class="flex items-center gap-2">
-          <button @click="showAppointmentForm = !showAppointmentForm" class="flex items-center gap-2 text-sm font-bold text-teal-600 hover:text-teal-700 bg-teal-50 hover:bg-teal-100 px-4 py-2 rounded-xl transition-all">
+          <button @click="showAppointmentForm = !showAppointmentForm; closeEditForm()" class="flex items-center gap-2 text-sm font-bold text-teal-600 hover:text-teal-700 bg-teal-50 hover:bg-teal-100 px-4 py-2 rounded-xl transition-all">
             <Plus :size="16" /> New Appointment
           </button>
           <button @click="loadAppointments" class="flex items-center gap-1 text-xs text-slate-400 hover:text-slate-600 px-3 py-2 rounded-xl hover:bg-slate-100 transition-all">
@@ -332,6 +419,7 @@ const formatDateTime = (dt: string) => {
         <!-- Add Form -->
         <Transition name="slide">
           <div v-if="showAppointmentForm" class="bg-slate-50 rounded-2xl p-5 space-y-3 border border-slate-200">
+            <p class="text-sm font-extrabold text-slate-700">New Appointment</p>
             <div class="grid grid-cols-2 gap-3">
               <div>
                 <label class="block text-xs font-bold text-slate-500 mb-1">Date</label>
@@ -343,11 +431,8 @@ const formatDateTime = (dt: string) => {
               </div>
             </div>
 
-            <!-- Vet selector with prominent warning when no vets exist -->
             <div>
               <label class="block text-xs font-bold text-slate-500 mb-1">Select Vet</label>
-
-              <!-- Warning banner shown when no vets have been added yet -->
               <div v-if="vets.length === 0" class="flex items-start gap-3 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 mb-2">
                 <AlertCircle :size="16" class="text-amber-500 flex-shrink-0 mt-0.5" />
                 <div>
@@ -358,7 +443,6 @@ const formatDateTime = (dt: string) => {
                   </p>
                 </div>
               </div>
-
               <select
                 v-model="newAppointmentForm.vetId"
                 :disabled="vets.length === 0"
@@ -386,6 +470,51 @@ const formatDateTime = (dt: string) => {
           </div>
         </Transition>
 
+        <!-- Edit Form -->
+        <Transition name="slide">
+          <div v-if="editingAppointment" class="bg-blue-50 rounded-2xl p-5 space-y-3 border border-blue-200">
+            <p class="text-sm font-extrabold text-blue-700">
+              Edit Appointment <span class="font-normal text-blue-400">#{{ editingAppointment.id }}</span>
+            </p>
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <label class="block text-xs font-bold text-slate-500 mb-1">Date</label>
+                <input v-model="editForm.date" type="date" class="w-full px-3 py-2 rounded-xl border-2 border-slate-100 bg-white text-slate-800 text-sm font-medium focus:outline-none focus:border-blue-400 transition-all" />
+              </div>
+              <div>
+                <label class="block text-xs font-bold text-slate-500 mb-1">Time</label>
+                <input v-model="editForm.time" type="time" class="w-full px-3 py-2 rounded-xl border-2 border-slate-100 bg-white text-slate-800 text-sm font-medium focus:outline-none focus:border-blue-400 transition-all" />
+              </div>
+            </div>
+            <div>
+              <label class="block text-xs font-bold text-slate-500 mb-1">Select Vet</label>
+              <select
+                v-model="editForm.vetId"
+                class="w-full px-3 py-2 rounded-xl border-2 border-slate-100 bg-white text-slate-800 text-sm font-medium focus:outline-none focus:border-blue-400 transition-all"
+              >
+                <option value="">-- Select a Vet --</option>
+                <option v-for="vet in vets" :key="vet.id" :value="vet.id">
+                  {{ vet.name }}{{ vet.specialty ? ` · ${vet.specialty}` : '' }}
+                </option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-xs font-bold text-slate-500 mb-1">Description / Symptoms</label>
+              <textarea v-model="editForm.description" rows="2" placeholder="Describe symptoms or reason for visit (optional)" class="w-full px-3 py-2 rounded-xl border-2 border-slate-100 bg-white text-slate-800 text-sm font-medium focus:outline-none focus:border-blue-400 transition-all resize-none" />
+            </div>
+            <p v-if="editError" class="text-xs text-red-500">{{ editError }}</p>
+            <div class="flex gap-2 pt-1">
+              <button @click="handleEditAppointment" :disabled="isEditSubmitting" class="flex-1 py-2.5 bg-blue-500 hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-xl text-sm font-bold shadow-md shadow-blue-100 transition-all flex items-center justify-center gap-2">
+                <Loader2 v-if="isEditSubmitting" :size="14" class="animate-spin" />
+                Save Changes
+              </button>
+              <button @click="closeEditForm" class="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl text-sm font-bold transition-all flex items-center justify-center">
+                <X :size="14" />
+              </button>
+            </div>
+          </div>
+        </Transition>
+
         <!-- Loading -->
         <div v-if="loading" class="flex justify-center py-8">
           <Loader2 :size="24" class="animate-spin text-teal-400" />
@@ -401,7 +530,12 @@ const formatDateTime = (dt: string) => {
           <div
             v-for="appt in appointments"
             :key="appt.id"
-            class="border border-slate-100 rounded-2xl p-4 hover:border-teal-100 hover:shadow-sm transition-all"
+            :class="[
+              'border rounded-2xl p-4 transition-all',
+              editingAppointment?.id === appt.id
+                ? 'border-blue-300 bg-blue-50/40'
+                : 'border-slate-100 hover:border-teal-100 hover:shadow-sm',
+            ]"
           >
             <div class="flex items-start justify-between gap-2 mb-3">
               <div class="flex items-center gap-2 flex-wrap">
@@ -416,9 +550,14 @@ const formatDateTime = (dt: string) => {
                   <Clock :size="12" /> {{ formatTime(appt.appointmentTime) }}
                 </span>
               </div>
-              <button @click="handleDeleteAppointment(appt.id)" class="text-slate-300 hover:text-red-400 transition-colors flex-shrink-0">
-                <Trash2 :size="16" />
-              </button>
+              <div class="flex items-center gap-1 flex-shrink-0">
+                <button @click="openEditForm(appt)" class="p-1 text-slate-300 hover:text-blue-400 transition-colors" title="Edit">
+                  <Pencil :size="15" />
+                </button>
+                <button @click="handleDeleteAppointment(appt.id)" class="p-1 text-slate-300 hover:text-red-400 transition-colors" title="Delete">
+                  <Trash2 :size="16" />
+                </button>
+              </div>
             </div>
             <div class="space-y-1.5">
               <div class="flex items-start gap-2">
@@ -480,6 +619,13 @@ const formatDateTime = (dt: string) => {
           </div>
         </Transition>
 
+        <!-- Delete error -->
+        <div v-if="vetDeleteError" class="flex items-center gap-2 bg-red-50 text-red-600 text-sm px-4 py-3 rounded-xl">
+          <AlertCircle :size="16" />
+          {{ vetDeleteError }}
+          <button @click="vetDeleteError = ''" class="ml-auto text-xs underline">Dismiss</button>
+        </div>
+
         <!-- Loading -->
         <div v-if="vetLoading" class="flex justify-center py-6">
           <Loader2 :size="20" class="animate-spin text-blue-400" />
@@ -493,7 +639,12 @@ const formatDateTime = (dt: string) => {
               <p class="text-sm font-bold text-slate-800">{{ vet.name }}</p>
               <p v-if="vet.specialty" class="text-xs text-slate-400">{{ vet.specialty }}</p>
             </div>
-            <span class="text-xs text-slate-400">#{{ vet.id }}</span>
+            <div class="flex items-center gap-3">
+              <span class="text-xs text-slate-400">#{{ vet.id }}</span>
+              <button @click="handleDeleteVet(vet.id)" class="text-slate-300 hover:text-red-400 transition-colors" title="Delete vet">
+                <Trash2 :size="16" />
+              </button>
+            </div>
           </div>
         </div>
       </div>
