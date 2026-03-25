@@ -34,6 +34,7 @@ import {
   type Appointment,
   type Vet,
   type AddAppointmentPayload,
+  type UpdateAppointmentPayload,
 } from '../api/appointment'
 import { currentPet, allPets, loadPets, selectPet } from '../composables/usePetData'
 
@@ -161,9 +162,10 @@ const handleEditAppointment = async () => {
   editError.value = ''
   try {
     const appointmentTime = `${editForm.value.date}T${editForm.value.time}:00`
-    const payload: AddAppointmentPayload = {
+    const payload: UpdateAppointmentPayload = {
       appointmentTime,
       description: editForm.value.description || undefined,
+      vetId: Number(editForm.value.vetId),
     }
     await updateAppointment(editingAppointment.value.id, payload)
     await loadAppointments()
@@ -245,24 +247,33 @@ const handleDeleteVet = async (id: number) => {
   vetDeleteError.value = ''
   try {
     await deleteVet(id)
-    await loadVets()
-  } catch (err: unknown) {
-  let msg = ''
 
-  if (typeof err === 'object' && err !== null) {
-    const e = err as {
-      response?: { data?: { message?: string } }
-      message?: string
+    // 如果当前编辑表单或新增表单里正好选中了被删除的医生，则清空选择
+    if (newAppointmentForm.value.vetId === String(id)) {
+      newAppointmentForm.value.vetId = ''
+    }
+    if (editForm.value.vetId === String(id)) {
+      editForm.value.vetId = ''
     }
 
-    msg = e.response?.data?.message || e.message || ''
+    await Promise.all([loadVets(), loadAppointments()])
+  } catch (err: unknown) {
+    let msg = ''
+
+    if (typeof err === 'object' && err !== null) {
+      const e = err as {
+        response?: { data?: { message?: string } }
+        message?: string
+      }
+
+      msg = e.response?.data?.message || e.message || ''
+    }
+
+    vetDeleteError.value =
+      msg || 'Delete failed. This vet may have existing appointments.'
+
+    console.error('Failed to delete vet', err)
   }
-
-  vetDeleteError.value =
-    msg || 'Delete failed. This vet may have existing appointments.'
-
-  console.error('Failed to delete vet', err)
-}
 }
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

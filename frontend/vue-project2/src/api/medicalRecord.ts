@@ -14,7 +14,9 @@ export interface MedicalRecord {
   title: string
   description?: string
   visitDate?: string
-  // 注意：后端 @JsonIgnoreProperties({"pet","disease"}) 所以这两个字段不会返回
+  diseaseId?: number | null
+  diseaseName?: string | null
+  diseaseCategory?: string | null
 }
 
 export interface AddMedicalRecordPayload {
@@ -63,9 +65,9 @@ export const updateMedicalRecord = (
 export const deleteMedicalRecord = (id: number) =>
   http.delete(`/medical-records/${id}`)
 
-// 后端关键词搜索（按 title）
-export const searchMedicalRecords = (title: string) =>
-  http.get<MedicalRecord[]>('/medical-records/search', { params: { title } })
+// 后端关键词搜索（按当前宠物 + 标题/描述）
+export const searchMedicalRecords = (petId: number, keyword: string) =>
+  http.get<MedicalRecord[]>('/medical-records/search', { params: { petId, keyword } })
 
 // ── 疾病 API ──────────────────────────────────────────────
 

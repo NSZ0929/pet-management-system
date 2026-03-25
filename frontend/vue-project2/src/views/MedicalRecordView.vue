@@ -20,7 +20,9 @@ import {
   addMedicalRecord,
   updateMedicalRecord,
   deleteMedicalRecord,
+  searchMedicalRecords,
   getAllDiseases,
+  searchDiseases,
   addDisease,
   updateDisease,
   deleteDisease,
@@ -36,15 +38,21 @@ defineProps<{ headerTitle?: string }>()
 const records = ref<MedicalRecord[]>([])
 const diseases = ref<Disease[]>([])
 const loading = ref(false)
+const diseaseLoading = ref(false)
 const error = ref('')
+const searchKeyword = ref('')
+const diseaseSearch = ref('')
+const editDiseaseSearch = ref('')
 
 // ── Load ──────────────────────────────────────────────────
-const loadRecords = async () => {
+const loadRecords = async (keyword = '') => {
   if (!currentPet.value?.id) return
   loading.value = true
   error.value = ''
   try {
-    const res = await getMedicalRecordsByPet(currentPet.value.id)
+    const res = keyword.trim()
+      ? await searchMedicalRecords(currentPet.value.id, keyword.trim())
+      : await getMedicalRecordsByPet(currentPet.value.id)
     records.value = res.data
   } catch {
     error.value = 'Failed to load medical records. Check backend connection.'
@@ -53,12 +61,40 @@ const loadRecords = async () => {
   }
 }
 
+const retryLoadRecords = async () => {
+  await loadRecords()
+}
+
 const loadDiseases = async () => {
+  diseaseLoading.value = true
   try {
     const res = await getAllDiseases()
     diseases.value = res.data
   } catch {
     console.error('Failed to load disease list')
+  } finally {
+    diseaseLoading.value = false
+  }
+}
+
+const diseaseSearchResults = ref<Disease[]>([])
+const editDiseaseSearchResults = ref<Disease[]>([])
+
+const searchDiseasesRemotely = async (keyword: string, mode: 'add' | 'edit') => {
+  if (!keyword.trim()) {
+    if (mode === 'add') diseaseSearchResults.value = []
+    else editDiseaseSearchResults.value = []
+    return
+  }
+
+  try {
+    const res = await searchDiseases(keyword.trim())
+    if (mode === 'add') diseaseSearchResults.value = res.data
+    else editDiseaseSearchResults.value = res.data
+  } catch {
+    console.error('Failed to search diseases')
+    if (mode === 'add') diseaseSearchResults.value = []
+    else editDiseaseSearchResults.value = []
   }
 }
 
@@ -68,20 +104,36 @@ onMounted(async () => {
   await loadRecords()
 })
 
+let recordSearchTimer: ReturnType<typeof setTimeout> | null = null
 watch(
-  () => currentPet.value?.id,
-  () => loadRecords(),
+  [() => currentPet.value?.id, searchKeyword],
+  ([petId, keyword]) => {
+    if (!petId) return
+    if (recordSearchTimer) clearTimeout(recordSearchTimer)
+    recordSearchTimer = setTimeout(() => {
+      void loadRecords(keyword ?? '')
+    }, 250)
+  },
 )
 
-// ── Search/Filter ──────────────────────────────────────────────
-const searchKeyword = ref('')
-const filteredRecords = computed(() => {
-  if (!searchKeyword.value.trim()) return records.value
-  return records.value.filter(
-    (r: MedicalRecord) =>
-      r.title.includes(searchKeyword.value) || r.description?.includes(searchKeyword.value),
-  )
+let diseaseSearchTimer: ReturnType<typeof setTimeout> | null = null
+watch(diseaseSearch, (keyword) => {
+  if (diseaseSearchTimer) clearTimeout(diseaseSearchTimer)
+  diseaseSearchTimer = setTimeout(() => {
+    void searchDiseasesRemotely(keyword, 'add')
+  }, 250)
 })
+
+let editDiseaseSearchTimer: ReturnType<typeof setTimeout> | null = null
+watch(editDiseaseSearch, (keyword) => {
+  if (editDiseaseSearchTimer) clearTimeout(editDiseaseSearchTimer)
+  editDiseaseSearchTimer = setTimeout(() => {
+    void searchDiseasesRemotely(keyword, 'edit')
+  }, 250)
+})
+
+// ── Search/Filter ──────────────────────────────────────────────
+const filteredRecords = computed(() => records.value)
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 // Add Record Form
@@ -95,15 +147,11 @@ const newRecord = ref<AddMedicalRecordPayload>({
   visitDate: new Date().toISOString().split('T')[0],
 })
 const selectedDiseaseId = ref<number | undefined>(undefined)
-const diseaseSearch = ref('')
 const showDiseaseDropdown = ref(false)
 
 const filteredDiseases = computed(() => {
   if (!diseaseSearch.value.trim()) return diseases.value
-  return diseases.value.filter(
-    (d: Disease) =>
-      d.name.includes(diseaseSearch.value) || d.category?.includes(diseaseSearch.value),
-  )
+  return diseaseSearchResults.value
 })
 
 const selectedDisease = computed(() =>
@@ -119,6 +167,7 @@ const selectDisease = (disease: Disease) => {
 const clearDisease = () => {
   selectedDiseaseId.value = undefined
   diseaseSearch.value = ''
+  diseaseSearchResults.value = []
 }
 
 const handleAddRecord = async () => {
@@ -140,6 +189,7 @@ const handleAddRecord = async () => {
     }
     selectedDiseaseId.value = undefined
     diseaseSearch.value = ''
+    diseaseSearchResults.value = []
   } catch {
     submitError.value = 'Failed to add. Please try again.'
   } finally {
@@ -153,17 +203,13 @@ const handleAddRecord = async () => {
 const editingRecord = ref<MedicalRecord | null>(null)
 const editRecord = ref<AddMedicalRecordPayload>({ title: '', description: '', visitDate: '' })
 const editDiseaseId = ref<number | undefined>(undefined)
-const editDiseaseSearch = ref('')
 const showEditDiseaseDropdown = ref(false)
 const editSubmitting = ref(false)
 const editError = ref('')
 
 const filteredEditDiseases = computed(() => {
   if (!editDiseaseSearch.value.trim()) return diseases.value
-  return diseases.value.filter(
-    (d: Disease) =>
-      d.name.includes(editDiseaseSearch.value) || d.category?.includes(editDiseaseSearch.value),
-  )
+  return editDiseaseSearchResults.value
 })
 
 const selectedEditDisease = computed(() =>
@@ -177,8 +223,9 @@ const openEditRecord = (record: MedicalRecord) => {
     description: record.description ?? '',
     visitDate: record.visitDate ?? new Date().toISOString().split('T')[0],
   }
-  editDiseaseId.value = undefined
-  editDiseaseSearch.value = ''
+  editDiseaseId.value = record.diseaseId ?? undefined
+  editDiseaseSearch.value = record.diseaseName ?? ''
+  editDiseaseSearchResults.value = []
   editError.value = ''
   showAddForm.value = false
 }
@@ -197,6 +244,7 @@ const selectEditDisease = (disease: Disease) => {
 const clearEditDisease = () => {
   editDiseaseId.value = undefined
   editDiseaseSearch.value = ''
+  editDiseaseSearchResults.value = []
 }
 
 const handleEditRecord = async () => {
@@ -245,7 +293,6 @@ const toggleExpand = (id: number) => {
 // Disease Management
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 const showDiseasePanel = ref(false)
-const diseaseLoading = ref(false)
 const showDiseaseAddForm = ref(false)
 const newDisease = ref({ name: '', category: '', description: '' })
 const diseaseAddSubmitting = ref(false)
@@ -262,7 +309,9 @@ const diseaseFilterKeyword = ref('')
 const filteredDiseaseList = computed(() => {
   if (!diseaseFilterKeyword.value.trim()) return diseases.value
   return diseases.value.filter(
-    d => d.name.includes(diseaseFilterKeyword.value) || d.category?.includes(diseaseFilterKeyword.value),
+    d =>
+      d.name.toLowerCase().includes(diseaseFilterKeyword.value.toLowerCase()) ||
+      (d.category ?? '').toLowerCase().includes(diseaseFilterKeyword.value.toLowerCase()),
   )
 })
 
@@ -333,20 +382,20 @@ const handleDeleteDisease = async (id: number) => {
     await deleteDisease(id)
     await loadDiseases()
   } catch (err: unknown) {
-  let msg = ''
+    let msg = ''
 
-  if (typeof err === 'object' && err !== null) {
-    const e = err as {
-      response?: { data?: { message?: string } }
-      message?: string
+    if (typeof err === 'object' && err !== null) {
+      const e = err as {
+        response?: { data?: { message?: string } }
+        message?: string
+      }
+
+      msg = e.response?.data?.message || e.message || ''
     }
 
-    msg = e.response?.data?.message || e.message || ''
+    diseaseDeleteError.value =
+      msg || 'Delete failed. This disease may be linked to existing records.'
   }
-
-  diseaseDeleteError.value =
-    msg || 'Delete failed. This disease may be linked to existing records.'
-}
 }
 </script>
 
@@ -411,14 +460,12 @@ const handleDeleteDisease = async (id: number) => {
         class="flex items-center gap-3 bg-red-50 border border-red-100 text-red-500 px-5 py-3 rounded-2xl text-sm"
       >
         <AlertCircle :size="16" />{{ error }}
-        <button @click="loadRecords" class="ml-auto flex items-center gap-1 font-bold">
+        <button @click="retryLoadRecords" class="ml-auto flex items-center gap-1 font-bold">
           <RefreshCw :size="13" /> Retry
         </button>
       </div>
 
-      <!-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ -->
-      <!-- Disease Management Panel                  -->
-      <!-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ -->
+      <!-- Disease Management Panel -->
       <transition name="slide">
         <div v-if="showDiseasePanel" class="bg-white rounded-3xl p-6 shadow-lg border border-violet-100 space-y-4">
           <div class="flex items-center justify-between">
@@ -623,11 +670,11 @@ const handleDeleteDisease = async (id: number) => {
                   </div>
 
                   <div
-                    v-if="showDiseaseDropdown && filteredDiseases.length === 0"
-                    class="absolute z-10 w-full mt-1 bg-white border border-slate-100 rounded-2xl shadow-xl px-4 py-3 text-sm text-slate-400 text-center"
-                  >
-                    No matching diseases found
-                  </div>
+  v-if="showDiseaseDropdown && diseaseSearch.trim() && filteredDiseases.length === 0"
+  class="absolute z-10 w-full mt-1 bg-white border border-slate-100 rounded-2xl shadow-xl px-4 py-3 text-sm text-slate-400 text-center"
+>
+  No matching diseases found
+</div>
                 </div>
               </div>
 
@@ -764,6 +811,13 @@ const handleDeleteDisease = async (id: number) => {
                       <span v-if="disease.category" class="text-xs text-slate-400 bg-slate-100 px-2 py-0.5 rounded-full">{{ disease.category }}</span>
                     </div>
                   </div>
+
+                  <div
+  v-if="showEditDiseaseDropdown && editDiseaseSearch.trim() && filteredEditDiseases.length === 0"
+  class="absolute z-10 w-full mt-1 bg-white border border-slate-100 rounded-2xl shadow-xl px-4 py-3 text-sm text-slate-400 text-center"
+>
+  No matching diseases found
+</div>
                 </div>
                 <p class="text-xs text-slate-400 mt-1.5">Leave blank to keep the current linked disease unchanged.</p>
               </div>
@@ -889,7 +943,14 @@ const handleDeleteDisease = async (id: number) => {
                 <p class="text-xs font-bold text-slate-400 mb-1">Description / Symptoms</p>
                 <p class="text-sm text-slate-600 leading-relaxed">{{ record.description }}</p>
               </div>
-              <div v-else class="text-xs text-slate-400 italic text-center py-2">No description available.</div>
+              <div v-if="record.diseaseName" class="bg-blue-50 rounded-xl p-3">
+                <p class="text-xs font-bold text-blue-400 mb-1">Linked Disease</p>
+                <p class="text-sm font-semibold text-blue-700">{{ record.diseaseName }}</p>
+                <p v-if="record.diseaseCategory" class="text-xs text-blue-500 mt-1">
+                  {{ record.diseaseCategory }}
+                </p>
+              </div>
+              <div v-if="!record.description && !record.diseaseName" class="text-xs text-slate-400 italic text-center py-2">No additional details available.</div>
             </div>
           </div>
         </div>

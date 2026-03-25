@@ -29,6 +29,10 @@ export interface AddAppointmentPayload {
   description?: string
 }
 
+export interface UpdateAppointmentPayload extends AddAppointmentPayload {
+  vetId?: number
+}
+
 // ── 预约 API（对应后端 /appointments）────────────────────────
 
 // 获取所有预约
@@ -53,9 +57,24 @@ export const addAppointment = (
     params: { petId, vetId },
   })
 
-// 更新预约
-export const updateAppointment = (id: number, payload: AddAppointmentPayload) =>
-  http.put<Appointment>(`/appointments/${id}`, payload)
+// 更新预约（可选同时更换医生）
+export const updateAppointment = (
+  id: number,
+  payload: UpdateAppointmentPayload,
+) => {
+  const params: Record<string, number> = {}
+
+  if (payload.vetId !== undefined) {
+    params.vetId = payload.vetId
+  }
+
+  const body: AddAppointmentPayload = {
+    appointmentTime: payload.appointmentTime,
+    description: payload.description,
+  }
+
+  return http.put<Appointment>(`/appointments/${id}`, body, { params })
+}
 
 // 删除预约
 export const deleteAppointment = (id: number) =>

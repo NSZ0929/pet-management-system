@@ -107,6 +107,44 @@ const deleteLog = async (id: number, type: DailyLogType) => {
   }
 }
 
+const failValidation = (message: string) => {
+  error.value = message
+  return false
+}
+
+const validateFeeding = () => {
+  if (!newFeeding.value.foodType.trim()) return failValidation('Food type is required.')
+  if (newFeeding.value.amount <= 0) return failValidation('Feeding amount must be greater than 0.')
+  if (newFeeding.value.water < 0) return failValidation('Water intake cannot be negative.')
+  return true
+}
+
+const validateExcretion = () => {
+  if (!newExcretion.value.color.trim()) return failValidation('Please enter excretion color.')
+  if (!newExcretion.value.consistency.trim()) return failValidation('Please enter excretion consistency.')
+  return true
+}
+
+const validateSleep = () => {
+  if (!newSleep.value.bedtime) return failValidation('Bedtime is required.')
+  if (!newSleep.value.wakeTime) return failValidation('Wake time is required.')
+  return true
+}
+
+const validateActivity = () => {
+  if (!newActivity.value.type.trim()) return failValidation('Activity type is required.')
+  if (newActivity.value.duration <= 0) return failValidation('Activity duration must be greater than 0.')
+  return true
+}
+
+const validateMood = () => {
+  if (!newMood.value.mood.trim()) return failValidation('Mood is required.')
+  if (newMood.value.intensity < 1 || newMood.value.intensity > 5) {
+    return failValidation('Mood intensity must be between 1 and 5.')
+  }
+  return true
+}
+
 // Feeding
 const showFeedingForm = ref(false)
 const feedingSubmitting = ref(false)
@@ -121,6 +159,8 @@ const newFeeding = ref({
 })
 const addFeeding = async () => {
   if (!petId.value) return
+  error.value = ''
+  if (!validateFeeding()) return
   feedingSubmitting.value = true
   try {
     await addDailyLog({
@@ -164,6 +204,8 @@ const newExcretion = ref({
 })
 const addExcretion = async () => {
   if (!petId.value) return
+  error.value = ''
+  if (!validateExcretion()) return
   excretionSubmitting.value = true
   try {
     await addDailyLog({
@@ -194,6 +236,8 @@ const sleepSubmitting = ref(false)
 const newSleep = ref({ date: today, bedtime: '', wakeTime: '', quality: 3, note: '' })
 const addSleep = async () => {
   if (!petId.value) return
+  error.value = ''
+  if (!validateSleep()) return
   sleepSubmitting.value = true
   try {
     await addDailyLog({ petId: petId.value, type: 'SLEEP', content: JSON.stringify(newSleep.value) })
@@ -234,6 +278,8 @@ const toggleBehavior = (b: string) => {
 }
 const addActivity = async () => {
   if (!petId.value) return
+  error.value = ''
+  if (!validateActivity()) return
   activitySubmitting.value = true
   try {
     await addDailyLog({
@@ -271,6 +317,8 @@ const moodSubmitting = ref(false)
 const newMood = ref({ date: today, mood: 'neutral', intensity: 2, triggers: '', note: '' })
 const addMood = async () => {
   if (!petId.value) return
+  error.value = ''
+  if (!validateMood()) return
   moodSubmitting.value = true
   try {
     await addDailyLog({ petId: petId.value, type: 'MOOD', content: JSON.stringify(newMood.value) })
