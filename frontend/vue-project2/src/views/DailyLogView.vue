@@ -619,6 +619,7 @@ const sections = [
             class="text-slate-400"
           />
         </button>
+
         <div v-if="expandedSection === 'excretion'" class="px-5 pb-5 space-y-3">
           <div
             v-for="log in excretionLogs"
@@ -626,29 +627,44 @@ const sections = [
             class="bg-slate-50 rounded-2xl p-4 flex items-start justify-between gap-3"
           >
             <div class="flex-1 space-y-1">
-              <div class="flex items-center gap-2">
+              <div class="flex items-center gap-2 flex-wrap">
                 <span class="text-lg">{{ parseData(log).type === 'urine' ? '💧' : '💩' }}</span>
-                <span class="font-semibold text-slate-800">{{
-                  parseData(log).type === 'urine' ? 'Urination' : 'Defecation'
-                }}</span>
+                <span class="font-semibold text-slate-800">
+                  {{ parseData(log).type === 'urine' ? 'Urination' : 'Defecation' }}
+                </span>
+
                 <span
                   v-if="parseData(log).abnormal"
                   class="text-xs px-2 py-0.5 rounded-full bg-red-50 text-red-500 font-medium flex items-center gap-1"
-                  ><AlertCircle :size="10" />Abnormal</span
                 >
+                  <AlertCircle :size="10" />
+                  Abnormal
+                </span>
                 <span
                   v-else
                   class="text-xs px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-500 font-medium flex items-center gap-1"
-                  ><CheckCircle2 :size="10" />Normal</span
                 >
+                  <CheckCircle2 :size="10" />
+                  Normal
+                </span>
               </div>
-              <div class="flex gap-4 text-sm text-slate-500">
-                <span class="flex items-center gap-1"
-                  ><Clock :size="12" />{{ parseData(log).time }}</span
-                >
+
+              <div class="flex gap-4 text-sm text-slate-500 flex-wrap">
+                <span class="flex items-center gap-1">
+                  <Clock :size="12" />
+                  {{ parseData(log).time }}
+                </span>
                 <span v-if="parseData(log).color">Color: {{ parseData(log).color }}</span>
+                <span v-if="parseData(log).consistency">
+                  Consistency: {{ parseData(log).consistency }}
+                </span>
               </div>
+
+              <p v-if="parseData(log).note" class="text-xs text-slate-400 italic">
+                {{ parseData(log).note }}
+              </p>
             </div>
+
             <button
               @click="deleteLog(log.id!, 'EXCRETION')"
               class="text-slate-300 hover:text-red-400 mt-1"
@@ -656,10 +672,98 @@ const sections = [
               <Trash2 :size="16" />
             </button>
           </div>
+
           <div
             v-if="showExcretionForm"
             class="bg-blue-50 rounded-2xl p-4 space-y-3 border border-blue-100"
           >
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <label class="text-xs font-semibold text-slate-600 mb-1 block">Time</label>
+                <input
+                  type="time"
+                  v-model="newExcretion.time"
+                  class="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-300 bg-white"
+                />
+              </div>
+
+              <div>
+                <label class="text-xs font-semibold text-slate-600 mb-1 block">Type</label>
+                <div class="flex gap-2 h-[38px]">
+                  <button
+                    @click="newExcretion.type = 'urine'"
+                    class="flex-1 rounded-xl text-sm font-semibold border-2 transition-all"
+                    :class="
+                      newExcretion.type === 'urine'
+                        ? 'border-blue-400 bg-blue-400 text-white'
+                        : 'border-slate-200 bg-white text-slate-600'
+                    "
+                  >
+                    💧 Urination
+                  </button>
+                  <button
+                    @click="newExcretion.type = 'defecation'"
+                    class="flex-1 rounded-xl text-sm font-semibold border-2 transition-all"
+                    :class="
+                      newExcretion.type === 'defecation'
+                        ? 'border-blue-400 bg-blue-400 text-white'
+                        : 'border-slate-200 bg-white text-slate-600'
+                    "
+                  >
+                    💩 Defecation
+                  </button>
+                </div>
+              </div>
+
+              <div>
+                <label class="text-xs font-semibold text-slate-600 mb-1 block">Color</label>
+                <input
+                  type="text"
+                  v-model="newExcretion.color"
+                  placeholder="e.g. light yellow / brown"
+                  class="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-300 bg-white"
+                />
+              </div>
+
+              <div>
+                <label class="text-xs font-semibold text-slate-600 mb-1 block">Consistency</label>
+                <input
+                  type="text"
+                  v-model="newExcretion.consistency"
+                  placeholder="e.g. normal / loose / hard"
+                  class="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-300 bg-white"
+                />
+              </div>
+
+              <div class="col-span-2">
+                <label class="text-xs font-semibold text-slate-600 mb-1 block">Status</label>
+                <button
+                  @click="newExcretion.abnormal = !newExcretion.abnormal"
+                  class="w-full flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-sm font-semibold border-2 transition-all"
+                  :class="
+                    newExcretion.abnormal
+                      ? 'border-red-400 bg-red-50 text-red-500'
+                      : 'border-slate-200 text-slate-500 bg-white'
+                  "
+                >
+                  <component
+                    :is="newExcretion.abnormal ? AlertCircle : CheckCircle2"
+                    :size="14"
+                  />
+                  {{ newExcretion.abnormal ? 'Abnormal' : 'Normal' }}
+                </button>
+              </div>
+            </div>
+
+            <div>
+              <label class="text-xs font-semibold text-slate-600 mb-1 block">Notes</label>
+              <input
+                type="text"
+                v-model="newExcretion.note"
+                placeholder="Optional notes..."
+                class="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-300 bg-white"
+              />
+            </div>
 
             <div class="flex gap-2">
               <button
@@ -667,9 +771,8 @@ const sections = [
                 :disabled="excretionSubmitting"
                 class="flex-1 bg-blue-500 hover:bg-blue-600 disabled:bg-blue-300 text-white font-semibold py-2 rounded-xl text-sm flex items-center justify-center gap-2"
               >
-                <Loader2 v-if="excretionSubmitting" :size="14" class="animate-spin" />{{
-                  excretionSubmitting ? 'Saving...' : '✓ Save'
-                }}
+                <Loader2 v-if="excretionSubmitting" :size="14" class="animate-spin" />
+                {{ excretionSubmitting ? 'Saving...' : '✓ Save' }}
               </button>
               <button
                 @click="showExcretionForm = false"
@@ -679,12 +782,14 @@ const sections = [
               </button>
             </div>
           </div>
+
           <button
             v-if="!showExcretionForm"
             @click="showExcretionForm = true"
             class="w-full flex items-center justify-center gap-2 py-3 border-2 border-dashed border-blue-200 rounded-2xl text-blue-500 hover:bg-blue-50 text-sm font-semibold"
           >
-            <Plus :size="16" /> Add Entry
+            <Plus :size="16" />
+            Add Entry
           </button>
         </div>
       </div>
