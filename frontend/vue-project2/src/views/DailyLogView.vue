@@ -139,8 +139,8 @@ const validateActivity = () => {
 
 const validateMood = () => {
   if (!newMood.value.mood.trim()) return failValidation('Mood is required.')
-  if (newMood.value.intensity < 1 || newMood.value.intensity > 5) {
-    return failValidation('Mood intensity must be between 1 and 5.')
+  if (newMood.value.intensity < 1 || newMood.value.intensity > 3) {
+    return failValidation('Mood intensity must be between 1 and 3.')
   }
   return true
 }
